@@ -501,8 +501,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
         />
       </div>
 
-      {/* Иконка приложения секция удалена по просьбе пользователя */}
-
       <div className="settings-section-block">
         <h3>Производительность</h3>
         <div className="settings-form-group-checkbox">
@@ -1053,7 +1051,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 onMouseOver={(e) => e.currentTarget.style.color = 'var(--primary-neon)'}
                 onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-dim)'}
               >
-                prod by Vlyne {"<3"}
               </a>
             </div>
 
