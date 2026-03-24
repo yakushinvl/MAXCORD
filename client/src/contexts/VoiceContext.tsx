@@ -1027,7 +1027,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     useEffect(() => {
         if (!socket || !isConnected || !activeChannelId || !localStreamRef.current) return;
 
-        const handleUserStateUpdate = (data: { userId: string; isMuted: boolean; isDeafened: boolean; isScreenSharing?: boolean; isServerMuted?: boolean; isServerDeafened?: boolean }) => {
+        const handleUserStateUpdate = (data: { userId: string; isMuted: boolean; isDeafened: boolean; isScreenSharing?: boolean; isVideoOn?: boolean; isServerMuted?: boolean; isServerDeafened?: boolean }) => {
             setUserStates(prev => {
                 const oldState = prev.get(data.userId);
                 if (data.userId !== user?._id) {
