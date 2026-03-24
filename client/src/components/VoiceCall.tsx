@@ -277,6 +277,32 @@ const VoiceCall: React.FC<VoiceCallProps> = ({
               return next;
             });
           }
+        })
+        .on(RoomEvent.LocalTrackPublished, (publication) => {
+          const track = publication.track;
+          if (!track) return;
+          if (publication.source === Track.Source.Microphone) {
+             setLocalStream(new MediaStream([track.mediaStreamTrack!]));
+          } else if (publication.source === Track.Source.Camera) {
+             setIsVideoEnabled(true);
+             const stream = new MediaStream([track.mediaStreamTrack!]);
+             setLocalStream(prev => {
+                if (!prev) return stream;
+                const next = new MediaStream(prev.getTracks());
+                next.addTrack(track.mediaStreamTrack!);
+                return next;
+             });
+          }
+        })
+        .on(RoomEvent.LocalTrackUnpublished, (publication) => {
+          if (publication.source === Track.Source.Camera) {
+            setIsVideoEnabled(false);
+            setLocalStream(prev => {
+              if (!prev) return null;
+              const remaining = prev.getTracks().filter(t => t.kind !== 'video');
+              return remaining.length > 0 ? new MediaStream(remaining) : null;
+            });
+          }
         });
 
       await room.connect(serverUrl, token);
@@ -321,7 +347,28 @@ const VoiceCall: React.FC<VoiceCallProps> = ({
   };
 
   const toggleMute = () => { setIsMuted(!isMuted); roomRef.current?.localParticipant.setMicrophoneEnabled(isMuted); };
-  const toggleVideo = async () => { setIsVideoEnabled(!isVideoEnabled); await roomRef.current?.localParticipant.setCameraEnabled(!isVideoEnabled); };
+  const toggleVideo = async () => {
+    const newState = !isVideoEnabled;
+    setIsVideoEnabled(newState);
+    if (roomRef.current) {
+        await roomRef.current.localParticipant.setCameraEnabled(newState);
+        
+        // Manual sync for local preview in case event is slow
+        const cameraPub = roomRef.current.localParticipant.getTrackPublication(Track.Source.Camera);
+        if (newState && cameraPub?.track) {
+            setLocalStream(prev => {
+                const tracks = prev ? [...prev.getTracks().filter(t => t.kind !== 'video'), cameraPub.track!.mediaStreamTrack!] : [cameraPub.track!.mediaStreamTrack!];
+                return new MediaStream(tracks);
+            });
+        } else if (!newState) {
+            setLocalStream(prev => {
+                if (!prev) return null;
+                const remaining = prev.getTracks().filter(t => t.kind !== 'video');
+                return remaining.length > 0 ? new MediaStream(remaining) : null;
+            });
+        }
+    }
+  };
 
   const toggleScreenShare = async (sourceId?: string, options?: { resolution: string, frameRate: string }) => {
     if (isScreenSharing) {
