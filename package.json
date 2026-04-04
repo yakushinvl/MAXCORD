@@ -2,7 +2,6 @@
   "name": "maxcord-discord",
   "version": "1.0.0",
   "description": "Discord clone application",
-  "main": "index.js",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd server && npm run dev",
@@ -18,14 +17,5 @@
   "license": "ISC",
   "devDependencies": {
     "concurrently": "^8.2.2"
-  },
-  "dependencies": {
-    "@livekit/rtc-node": "^0.13.24",
-    "@types/react-syntax-highlighter": "^15.5.13",
-    "axios": "^1.13.4",
-    "electron-updater": "^6.6.2",
-    "react-syntax-highlighter": "^16.1.1",
-    "socket.io-client": "^4.8.3",
-    "yandex-music-client": "^0.4.3"
   }
 }

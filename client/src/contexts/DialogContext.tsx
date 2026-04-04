@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import './Dialog.css'; // Create this CSS file next
 
-export interface DialogOptions {
+interface DialogOptions {
     title: string;
     message: string;
     type: 'alert' | 'confirm' | 'prompt';

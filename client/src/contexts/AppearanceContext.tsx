@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type ThemeType = 'dark' | 'light' | 'amoled';
-export type DensityType = 'cozy' | 'compact';
-export type AppIconType = 'default' | 'icon1' | 'icon2' | 'icon3' | 'icon4';
+type DensityType = 'cozy' | 'compact';
+type AppIconType = 'default' | 'icon1' | 'icon2' | 'icon3' | 'icon4';
 
 interface AppearanceSettings {
     theme: ThemeType;

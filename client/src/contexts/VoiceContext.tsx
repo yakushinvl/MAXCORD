@@ -1027,7 +1027,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     useEffect(() => {
         if (!socket || !isConnected || !activeChannelId || !localStreamRef.current) return;
 
-        const handleUserStateUpdate = (data: { userId: string; isMuted: boolean; isDeafened: boolean; isScreenSharing?: boolean; isServerMuted?: boolean; isServerDeafened?: boolean }) => {
+        const handleUserStateUpdate = (data: { userId: string; isMuted: boolean; isDeafened: boolean; isScreenSharing?: boolean; isVideoOn?: boolean; isServerMuted?: boolean; isServerDeafened?: boolean }) => {
             setUserStates(prev => {
                 const oldState = prev.get(data.userId);
                 if (data.userId !== user?._id) {
@@ -1043,6 +1043,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     isMuted: data.isMuted,
                     isDeafened: data.isDeafened,
                     isScreenSharing: data.isScreenSharing || false,
+                    isVideoOn: data.isVideoOn || false,
                     isServerMuted: data.isServerMuted || false,
                     isServerDeafened: data.isServerDeafened || false
                 });
@@ -1091,6 +1092,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                         isMuted: data.user.isMuted || false,
                         isDeafened: data.user.isDeafened || false,
                         isScreenSharing: data.user.isScreenSharing || false,
+                        isVideoOn: data.user.isVideoOn || false,
                         isServerMuted: data.user.isServerMuted || false,
                         isServerDeafened: data.user.isServerDeafened || false
                     });

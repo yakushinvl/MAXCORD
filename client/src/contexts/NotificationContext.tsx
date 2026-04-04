@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useMemo } from
 import { getAvatarUrl } from '../utils/avatar';
 import './Notification.css';
 
-export interface Notification {
+interface Notification {
     id: string;
     title: string;
     content: string;
