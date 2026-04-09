@@ -464,6 +464,18 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             console.log(`[Voice] Track subscribed: ${track.kind} from ${userId} (Source: ${publication.source})`);
 
             if (isScreen) {
+                // Force high quality for screen shares — prevent adaptive stream
+                // from throttling the publisher's bitrate
+                if (track.kind === Track.Kind.Video) {
+                    try {
+                        publication.setVideoQuality(2); // HIGH quality
+                        publication.setVideoFPS(0); // No FPS limit
+                        console.log(`[Voice] Requested HIGH quality for screen share from ${userId}`);
+                    } catch (e) {
+                        console.warn('[Voice] Could not set video quality on screen share:', e);
+                    }
+                }
+
                 setRemoteScreenStreams(prev => {
                     const existing = prev.get(userId);
                     const tracks = existing ? [...existing.getTracks().filter(t => t.kind !== track.kind), track.mediaStreamTrack!] : [track.mediaStreamTrack!];
@@ -719,10 +731,8 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
             // Optimize for smoothness vs sharpness
             stream.getVideoTracks().forEach(t => {
-                if (t.contentHint) {
-                    // For 60/120fps, 'motion' is critical for smoothness
-                    (t as any).contentHint = frameRate >= 60 ? 'motion' : 'detail';
-                }
+                // contentHint is always settable (it's a property, not a method)
+                (t as any).contentHint = frameRate >= 60 ? 'motion' : 'detail';
             });
 
             // Publish to LiveKit
@@ -731,6 +741,16 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 const audioTrack = stream.getAudioTracks()[0];
 
                 if (videoTrack) {
+                    // Force degradationPreference to maintain resolution — prevents
+                    // the encoder from reducing resolution when bandwidth is tight,
+                    // which is the main cause of perceived "bitrate drops".
+                    try {
+                        const sender = roomRef.current.localParticipant
+                            .getTrackPublication(Track.Source.ScreenShare)
+                            ?.track?.sender;
+                        // We'll also apply it after publishing below
+                    } catch (_) {}
+
                     await roomRef.current.localParticipant.publishTrack(videoTrack, {
                         name: 'screen_video',
                         source: Track.Source.ScreenShare,
@@ -739,8 +759,27 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                             maxFramerate: frameRate,
                         },
                         videoCodec: 'h264',
-                        simulcast: false // Disable simulcast to use ALL bandwidth for the primary stream
+                        simulcast: false,
+                        degradationPreference: 'maintain-resolution',
                     });
+
+                    // After publishing, force-set degradationPreference on the RTP sender
+                    try {
+                        const screenPub = roomRef.current.localParticipant
+                            .getTrackPublication(Track.Source.ScreenShare);
+                        const sender = (screenPub?.track as any)?.sender as RTCRtpSender | undefined;
+                        if (sender) {
+                            const params = sender.getParameters();
+                            if (params.encodings?.length) {
+                                params.encodings[0].maxBitrate = bitrate;
+                                params.degradationPreference = 'maintain-resolution';
+                                await sender.setParameters(params);
+                                console.log('[Voice] Screen share sender params updated: maintain-resolution, bitrate:', bitrate);
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('[Voice] Could not set degradationPreference on sender:', e);
+                    }
                 }
                 if (audioTrack) {
                     await roomRef.current.localParticipant.publishTrack(audioTrack, { name: 'screen_audio', source: Track.Source.ScreenShareAudio });
@@ -848,6 +887,13 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     dtx: true,
                     simulcast: true,
                     red: true,
+                    screenShareEncoding: {
+                        maxBitrate: 10_000_000,
+                        maxFramerate: 30,
+                    },
+                    screenShareSimulcastLayers: [],
+                    stopMicTrackOnMute: false,
+                    videoSimulcastLayers: [],
                 }
             });
 

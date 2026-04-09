@@ -1,14 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Socket } from 'socket.io-client';
 import axios from 'axios';
 import { User } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useVoice, useVoiceLevels } from '../contexts/VoiceContext';
-import { getAvatarUrl } from '../utils/avatar';
-import { setupNoiseSuppression } from '../utils/audioProcessing';
 import { SOUNDS, soundManager } from '../utils/sounds';
 import { useDialog } from '../contexts/DialogContext';
-import { PhoneIcon, MicIcon, MicMutedIcon, VideoIcon, CameraIcon, CloseIcon, CheckIcon, MonitorIcon } from './Icons';
+import { PhoneIcon, MicIcon, MicMutedIcon, CameraIcon, VideoIcon, CloseIcon, CheckIcon, MonitorIcon } from './Icons';
 import ScreenSourceSelector from './ScreenSourceSelector';
 import UserAvatar from './UserAvatar';
 import { nativeAudioManager } from '../utils/nativeAudio';
@@ -16,7 +14,6 @@ import {
   Room,
   RoomEvent,
   RemoteTrack,
-  RemoteTrackPublication,
   RemoteParticipant,
   Track,
   VideoPresets
@@ -31,61 +28,100 @@ interface VoiceCallProps {
   dmName?: string;
   onEndCall: () => void;
   initialIncomingCall?: boolean;
-  initialOffer?: any;
 }
 
 const RemoteAudioPlayer: React.FC<{
-  stream: MediaStream;
+  participant: RemoteParticipant;
   volume: number;
   muted: boolean;
-}> = ({ stream, volume, muted }) => {
+}> = ({ participant, volume, muted }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const gainNodeRef = useRef<GainNode | null>(null);
+  const trackRef = useRef<RemoteTrack | null>(null);
 
   useEffect(() => {
-    if (!stream) return;
-    const audio = audioRef.current;
-    if (!audio) return;
+    const handleTrackSubscribed = (track: RemoteTrack) => {
+      if (track.kind === Track.Kind.Audio) {
+        console.log('[Audio] Subscribed to remote audio track:', track.sid);
+        trackRef.current = track;
+        if (audioRef.current) {
+          track.attach(audioRef.current);
+          
+          const audioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
+          if (audioCtx) {
+            const ctx = new audioCtx();
+            if (ctx.state === 'suspended') ctx.resume();
+          }
 
-    try {
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+          audioRef.current.play().catch(e => {
+            console.warn('[Audio] Autoplay blocked, waiting for click:', e);
+            const playOnDocClick = () => {
+              audioRef.current?.play();
+              window.removeEventListener('click', playOnDocClick);
+            };
+            window.addEventListener('click', playOnDocClick);
+          });
+        }
       }
-      const ctx = audioCtxRef.current;
-      const source = ctx.createMediaStreamSource(stream);
-      const gain = ctx.createGain();
-      const dest = ctx.createMediaStreamDestination();
+    };
 
-      source.connect(gain);
-      gain.connect(dest);
-      gainNodeRef.current = gain;
-
-      audio.srcObject = dest.stream;
-      audio.play().catch(() => { });
-    } catch (e) {
-      audio.srcObject = stream;
-      audio.play().catch(() => { });
-    }
+    participant.on(RoomEvent.TrackSubscribed, handleTrackSubscribed);
+    participant.getTrackPublications().forEach(pub => {
+      if (pub.track && pub.kind === Track.Kind.Audio) {
+        handleTrackSubscribed(pub.track as RemoteTrack);
+      }
+    });
 
     return () => {
-      audioCtxRef.current?.close().catch(() => { });
-      audioCtxRef.current = null;
+      participant.off(RoomEvent.TrackSubscribed, handleTrackSubscribed);
+      if (trackRef.current && audioRef.current) {
+        trackRef.current.detach(audioRef.current);
+      }
     };
-  }, [stream]);
+  }, [participant]);
 
   useEffect(() => {
-    if (gainNodeRef.current) {
-      const v = muted ? 0 : volume;
-      // Use 0.05s ramp for smoothness
-      gainNodeRef.current.gain.setTargetAtTime(v, audioCtxRef.current?.currentTime || 0, 0.05);
-      if (audioRef.current) audioRef.current.volume = 1;
-    } else if (audioRef.current) {
-      audioRef.current.volume = Math.min(Math.max(muted ? 0 : volume, 0), 1);
+    if (audioRef.current) {
+      audioRef.current.volume = muted ? 0 : volume;
     }
   }, [volume, muted]);
 
   return <audio ref={audioRef} autoPlay playsInline />;
+};
+
+const VideoRenderer: React.FC<{
+  participant: any;
+  isMe?: boolean;
+}> = ({ participant, isMe }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (!videoRef.current || !participant) return;
+    const el = videoRef.current;
+    
+    const attachTrack = () => {
+      const track = participant.getTrackPublication(Track.Source.Camera)?.track 
+                 || participant.getTrackPublication(Track.Source.ScreenShare)?.track;
+      if (track && track.kind === Track.Kind.Video) {
+        track.attach(el);
+      }
+    };
+
+    attachTrack();
+    participant.on(RoomEvent.TrackSubscribed, attachTrack);
+    participant.on(RoomEvent.TrackPublished, attachTrack);
+    participant.on(RoomEvent.TrackUnsubscribed, attachTrack);
+
+    return () => {
+      participant.off(RoomEvent.TrackSubscribed, attachTrack);
+      participant.off(RoomEvent.TrackPublished, attachTrack);
+      participant.off(RoomEvent.TrackUnsubscribed, attachTrack);
+      const track = participant.getTrackPublication(Track.Source.Camera)?.track 
+                 || participant.getTrackPublication(Track.Source.ScreenShare)?.track;
+      if (track) track.detach(el);
+    };
+  }, [participant]);
+
+  return <video ref={videoRef} autoPlay playsInline muted={isMe} className="participant-video" />;
 };
 
 const VoiceCall: React.FC<VoiceCallProps> = ({
@@ -93,34 +129,28 @@ const VoiceCall: React.FC<VoiceCallProps> = ({
 }) => {
   const { user } = useAuth();
   const { alert } = useDialog();
-  const { isNoiseSuppressionEnabled, userVolumes, isDeafened: isGlobalDeafened } = useVoice();
+  const { userVolumes, isDeafened: isGlobalDeafened, isNoiseSuppressionEnabled } = useVoice();
   const { speakingUsers = new Set<string>() } = useVoiceLevels() || {};
+  
   const [isCallActive, setIsCallActive] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoEnabled, setIsVideoEnabled] = useState(false);
-  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteParticipants, setRemoteParticipants] = useState<RemoteParticipant[]>([]);
-  const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
   const [isIncomingCall, setIsIncomingCall] = useState(initialIncomingCall);
   const [isRinging, setIsRinging] = useState(!initialIncomingCall);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
-  const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
   const [showScreenSelector, setShowScreenSelector] = useState(false);
   const [remoteScreenStreams, setRemoteScreenStreams] = useState<Map<string, MediaStream>>(new Map());
   const [participantsMetadata, setParticipantsMetadata] = useState<Map<string, User>>(new Map());
+  const [focusedParticipant, setFocusedParticipant] = useState<string | null>(null);
 
-  const [localSpeaking, setLocalSpeaking] = useState(false);
-  const [remoteSpeaking, setRemoteSpeaking] = useState(false);
-
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const roomRef = useRef<Room | null>(null);
   const ringTimeoutRef = useRef<any>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const ringtoneRef = useRef<HTMLAudioElement | null>(null);
   const wasCallEstablishedRef = useRef(false);
   const notificationSentRef = useRef(false);
   const mountedAtRef = useRef<number>(Date.now());
+  const hasInitRef = useRef(false);
+  const isMountedRef = useRef(false);
 
   const fetchMetadata = useCallback(async (userId: string) => {
     if (participantsMetadata.has(userId)) return;
@@ -132,9 +162,11 @@ const VoiceCall: React.FC<VoiceCallProps> = ({
 
   useEffect(() => {
     if (!socket || !dmId) return;
-    if (!initialIncomingCall) {
+    isMountedRef.current = true;
+
+    if (!hasInitRef.current && !initialIncomingCall) {
+      hasInitRef.current = true;
       socket.emit('join-dm-call', { dmId });
-      // If it's a group, we don't need targetUserId
       socket.emit('call-offer', {
         targetUserId: isGroup ? null : String(otherUser._id),
         dmId: String(dmId),
@@ -152,10 +184,6 @@ const VoiceCall: React.FC<VoiceCallProps> = ({
       }
     };
 
-    const handleIncomingOffer = () => {
-      if (!isCallActive) setIsIncomingCall(true);
-    };
-
     const handleExistingUsers = (users: string[]) => {
       if (users.length > 0) {
         setIsRinging(false);
@@ -168,86 +196,125 @@ const VoiceCall: React.FC<VoiceCallProps> = ({
     const handleUserLeft = (data: { userId: string }) => {
       if (isGroup) {
         setRemoteParticipants(prev => prev.filter(p => p.identity !== data.userId));
-        setRemoteStreams(prev => {
-          const next = new Map(prev);
-          next.delete(data.userId);
-          return next;
-        });
       } else if (String(data.userId) === String(otherUser._id)) {
         endCall();
       }
     };
 
+    const handleCallEnd = () => { if (!isGroup) endCall(); };
+    const handleIncomingOffer = () => { if (!isCallActive) setIsIncomingCall(true); };
+
     socket.on('call-offer', handleIncomingOffer);
-    socket.on('call-end', () => {
-      if (!isGroup) endCall();
-    });
+    socket.on('call-end', handleCallEnd);
     socket.on('dm-call-user-joined', handleOtherUserJoined);
     socket.on('dm-call-existing-users', handleExistingUsers);
     socket.on('dm-call-user-left', handleUserLeft);
 
     return () => {
-      const duration = Date.now() - mountedAtRef.current;
-      if (!initialIncomingCall && !wasCallEstablishedRef.current && !notificationSentRef.current && dmId && duration > 3000 && !isGroup) {
-        notificationSentRef.current = true;
-        axios.post(`/api/direct-messages/${dmId}/messages`, { content: 'Пропущенный звонок', type: 'missed-call' }).catch(() => { });
-      }
-      if (dmId) socket.emit('leave-dm-call', { dmId });
-      socket.off('call-offer'); socket.off('call-end'); socket.off('dm-call-user-joined'); socket.off('dm-call-existing-users');
-      socket.off('dm-call-user-left');
+      socket.off('call-offer', handleIncomingOffer);
+      socket.off('call-end', handleCallEnd);
+      socket.off('dm-call-user-joined', handleOtherUserJoined);
+      socket.off('dm-call-existing-users', handleExistingUsers);
+      socket.off('dm-call-user-left', handleUserLeft);
       if (ringTimeoutRef.current) clearTimeout(ringTimeoutRef.current);
-      cleanupStreams();
+
+      const wasInit = hasInitRef.current;
+      isMountedRef.current = false;
+      setTimeout(() => {
+        if (!isMountedRef.current && wasInit) {
+          const duration = Date.now() - mountedAtRef.current;
+          if (!initialIncomingCall && !wasCallEstablishedRef.current && !notificationSentRef.current && dmId && duration > 3000 && !isGroup) {
+            notificationSentRef.current = true;
+            axios.post(`/api/direct-messages/${dmId}/messages`, { content: 'Пропущенный звонок', type: 'missed-call' }).catch(() => { });
+          }
+          socket.emit('leave-dm-call', { dmId });
+          cleanupStreams();
+        }
+      }, 50);
     };
-  }, [socket, dmId, isGroup]);
+  }, [socket, dmId, isGroup, otherUser._id]);
 
   const joinLiveKitRoom = async () => {
-    if (roomRef.current) return;
+    if (roomRef.current) {
+       console.log('[LiveKit] Room already exists, cleaning up before reconnect...');
+       await roomRef.current.disconnect();
+       roomRef.current = null;
+    }
+
     try {
+      console.log(`[LiveKit] Requesting token for room call-${dmId}...`);
       const { data } = await axios.get('/api/livekit/token', {
-        params: {
-          roomName: `call-${dmId}`,
-          identity: user?._id?.toString()
-        }
+        params: { roomName: `call-${dmId}`, identity: user?._id?.toString() }
       });
 
       const { token, serverUrl } = data;
+      console.log('[LiveKit] Token received. Server URL:', serverUrl);
+
+      if (!token || typeof token !== 'string') {
+        throw new Error('Invalid token received from server');
+      }
+
+      // Smarter protocol handling
+      let connectUrl = serverUrl;
+      if (!connectUrl.startsWith('ws')) {
+         const isLocal = connectUrl.includes('localhost') || connectUrl.includes('127.0.0.1');
+         const isSecureOrigin = window.location.protocol === 'https:' || window.location.protocol === 'file:';
+         const protocol = (isSecureOrigin && !isLocal) ? 'wss://' : 'ws://';
+         connectUrl = protocol + connectUrl;
+         console.log('[LiveKit] Formatted connect URL:', connectUrl);
+      }
+
       const room = new Room({
         adaptiveStream: true,
         dynacast: true,
-        publishDefaults: { dtx: true, simulcast: true, red: true }
+        publishDefaults: {
+          dtx: true,
+          simulcast: true,
+          red: true,
+          screenShareEncoding: {
+            maxBitrate: 5_000_000,
+            maxFramerate: 30,
+          },
+          stopMicTrackOnMute: false,
+        }
       });
 
       roomRef.current = room;
+      wasCallEstablishedRef.current = true;
+
+      setRemoteParticipants(Array.from(room.remoteParticipants.values()));
+      if (isGroup) {
+         room.remoteParticipants.forEach(p => fetchMetadata(p.identity));
+      }
 
       room
-        .on(RoomEvent.ParticipantConnected, (participant) => {
-          setRemoteParticipants(prev => [...prev, participant]);
-          if (isGroup) fetchMetadata(participant.identity);
+        .on(RoomEvent.ParticipantConnected, (p) => {
+          console.log('[LiveKit] Participant connected:', p.identity);
+          setRemoteParticipants(prev => [...prev.filter(x => x.identity !== p.identity), p]);
+          if (isGroup) fetchMetadata(p.identity);
         })
-        .on(RoomEvent.ParticipantDisconnected, (participant) => {
-          setRemoteParticipants(prev => prev.filter(p => p.identity !== participant.identity));
-          setRemoteStreams(prev => {
-            const next = new Map(prev);
-            next.delete(participant.identity);
-            return next;
-          });
+        .on(RoomEvent.ParticipantDisconnected, (p) => {
+          console.log('[LiveKit] Participant disconnected:', p.identity);
+          setRemoteParticipants(prev => prev.filter(x => x.identity !== p.identity));
+        })
+        .on(RoomEvent.Disconnected, (reason) => {
+          console.log('[LiveKit] Disconnected:', reason);
+          if (reason !== undefined) {
+             setIsCallActive(false);
+          }
+        })
+        .on(RoomEvent.ConnectionStateChanged, (state) => {
+           console.log('[LiveKit] Connection state:', state);
         })
         .on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+          console.log('[LiveKit] Track subscribed:', track.kind, 'from', participant.identity);
           if (publication.source === Track.Source.ScreenShare) {
             soundManager.play(SOUNDS.SCREENSHARE_ON, 0.4);
             setRemoteScreenStreams(prev => {
               const next = new Map(prev);
-              const existing = next.get(participant.identity) || new MediaStream();
-              existing.addTrack(track.mediaStreamTrack!);
-              next.set(participant.identity, existing);
-              return next;
-            });
-          } else {
-            setRemoteStreams(prev => {
-              const next = new Map(prev);
-              const existing = next.get(participant.identity) || new MediaStream();
-              existing.addTrack(track.mediaStreamTrack!);
-              next.set(participant.identity, existing);
+              const stream = next.get(participant.identity) || new MediaStream();
+              stream.addTrack(track.mediaStreamTrack!);
+              next.set(participant.identity, stream);
               return next;
             });
           }
@@ -265,65 +332,31 @@ const VoiceCall: React.FC<VoiceCallProps> = ({
               }
               return next;
             });
-          } else {
-            setRemoteStreams(prev => {
-              const next = new Map(prev);
-              const stream = next.get(participant.identity);
-              if (stream) {
-                const remaining = stream.getTracks().filter(t => t.id !== track.mediaStreamTrack?.id);
-                if (remaining.length === 0) next.delete(participant.identity);
-                else next.set(participant.identity, new MediaStream(remaining));
-              }
-              return next;
-            });
-          }
-        })
-        .on(RoomEvent.LocalTrackPublished, (publication) => {
-          const track = publication.track;
-          if (!track) return;
-          if (publication.source === Track.Source.Microphone) {
-             setLocalStream(new MediaStream([track.mediaStreamTrack!]));
-          } else if (publication.source === Track.Source.Camera) {
-             setIsVideoEnabled(true);
-             const stream = new MediaStream([track.mediaStreamTrack!]);
-             setLocalStream(prev => {
-                if (!prev) return stream;
-                const next = new MediaStream(prev.getTracks());
-                next.addTrack(track.mediaStreamTrack!);
-                return next;
-             });
-          }
-        })
-        .on(RoomEvent.LocalTrackUnpublished, (publication) => {
-          if (publication.source === Track.Source.Camera) {
-            setIsVideoEnabled(false);
-            setLocalStream(prev => {
-              if (!prev) return null;
-              const remaining = prev.getTracks().filter(t => t.kind !== 'video');
-              return remaining.length > 0 ? new MediaStream(remaining) : null;
-            });
           }
         });
 
-      await room.connect(serverUrl, token);
+      console.log('[LiveKit] Connecting to:', connectUrl);
+      await room.connect(connectUrl, token);
+      console.log('[LiveKit] Successfully connected to room');
+      
+      setIsCallActive(true);
       setRemoteParticipants(Array.from(room.remoteParticipants.values()));
 
       await room.localParticipant.setMicrophoneEnabled(true);
       if (isVideoEnabled) await room.localParticipant.setCameraEnabled(true);
-
-      const micTrack = room.localParticipant.getTrackPublication(Track.Source.Microphone);
-      if (micTrack?.track) setLocalStream(new MediaStream([micTrack.track.mediaStreamTrack!]));
-
-      setIsCallActive(true);
-      wasCallEstablishedRef.current = true;
-    } catch (e) { console.error('[DM Voice] LiveKit join error:', e); }
+    } catch (e) { 
+      setIsCallActive(false);
+      alert('Ошибка подключения: ' + (e as Error).message); 
+    }
   };
 
   const acceptCall = async () => {
-    setIsIncomingCall(false);
-    setIsRinging(false);
+    setIsIncomingCall(false); setIsRinging(false);
     if (ringTimeoutRef.current) clearTimeout(ringTimeoutRef.current);
-    if (socket) socket.emit('join-dm-call', { dmId });
+    if (!hasInitRef.current) {
+      hasInitRef.current = true;
+      socket?.emit('join-dm-call', { dmId });
+    }
     await joinLiveKitRoom();
   };
 
@@ -331,43 +364,18 @@ const VoiceCall: React.FC<VoiceCallProps> = ({
     cleanupStreams();
     soundManager.play(SOUNDS.CALL_LEAVE, 0.4);
     if (socket) {
-      if (isGroup) {
-        socket.emit('leave-dm-call', { dmId });
-      } else {
-        socket.emit('call-end', { targetUserId: otherUser._id, dmId });
-      }
+      if (isGroup) socket.emit('leave-dm-call', { dmId });
+      else socket.emit('call-end', { targetUserId: otherUser._id, dmId });
     }
     setIsCallActive(false); onEndCall();
   };
 
-  const cleanupStreams = () => {
-    if (roomRef.current) { roomRef.current.disconnect(); roomRef.current = null; }
-    if (localStream) localStream.getTracks().forEach(track => track.stop());
-    if (screenStream) screenStream.getTracks().forEach(track => track.stop());
-  };
-
+  const cleanupStreams = () => { if (roomRef.current) { roomRef.current.disconnect(); roomRef.current = null; } };
   const toggleMute = () => { setIsMuted(!isMuted); roomRef.current?.localParticipant.setMicrophoneEnabled(isMuted); };
   const toggleVideo = async () => {
     const newState = !isVideoEnabled;
     setIsVideoEnabled(newState);
-    if (roomRef.current) {
-        await roomRef.current.localParticipant.setCameraEnabled(newState);
-        
-        // Manual sync for local preview in case event is slow
-        const cameraPub = roomRef.current.localParticipant.getTrackPublication(Track.Source.Camera);
-        if (newState && cameraPub?.track) {
-            setLocalStream(prev => {
-                const tracks = prev ? [...prev.getTracks().filter(t => t.kind !== 'video'), cameraPub.track!.mediaStreamTrack!] : [cameraPub.track!.mediaStreamTrack!];
-                return new MediaStream(tracks);
-            });
-        } else if (!newState) {
-            setLocalStream(prev => {
-                if (!prev) return null;
-                const remaining = prev.getTracks().filter(t => t.kind !== 'video');
-                return remaining.length > 0 ? new MediaStream(remaining) : null;
-            });
-        }
-    }
+    if (roomRef.current) await roomRef.current.localParticipant.setCameraEnabled(newState);
   };
 
   const toggleScreenShare = async (sourceId?: string, options?: { resolution: string, frameRate: string }) => {
@@ -377,39 +385,37 @@ const VoiceCall: React.FC<VoiceCallProps> = ({
       if (roomRef.current) await roomRef.current.localParticipant.setScreenShareEnabled(false);
     } else if (sourceId && roomRef.current) {
       try {
-        const frameRate = parseInt(options?.frameRate || '30', 10);
-        const constraints = {
-          audio: false,
-          video: { mandatory: { chromeMediaSource: 'desktop', chromeMediaSourceId: sourceId, maxFrameRate: frameRate } } as any
-        };
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        if (roomRef.current) {
-          const videoTrack = stream.getVideoTracks()[0];
-          if (videoTrack) await roomRef.current.localParticipant.publishTrack(videoTrack, { source: Track.Source.ScreenShare });
-        }
-        setScreenStream(stream);
+        await roomRef.current.localParticipant.setScreenShareEnabled(true, {
+           resolution: VideoPresets.h720,
+        });
         setIsScreenSharing(true);
         soundManager.play(SOUNDS.SCREENSHARE_ON, 0.4);
       } catch (e) { alert('Ошибка: ' + (e as Error).message); }
     }
   };
 
-  useEffect(() => {
-    if (localStream && localVideoRef.current) localVideoRef.current.srcObject = localStream;
-  }, [localStream]);
-
-  const allParticipants = [
-    { identity: user?._id || 'me', isMe: true, isLocal: true, participant: roomRef.current?.localParticipant },
-    ...remoteParticipants.map(p => ({ identity: p.identity, isMe: false, isLocal: false, participant: p }))
-  ];
+  const allParticipants = useMemo(() => {
+    const list = [{ identity: user?._id || 'me', isMe: true, p: roomRef.current?.localParticipant as any }];
+    
+    if (isGroup) {
+      remoteParticipants.forEach(p => {
+        if (!list.find(x => x.identity === p.identity)) {
+          list.push({ identity: p.identity, isMe: false, p });
+        }
+      });
+    } else {
+      // For 1:1, always ensure the other user is in the list to show their placeholder
+      const rp = remoteParticipants.find(p => String(p.identity) === String(otherUser._id));
+      list.push({ identity: String(otherUser._id), isMe: false, p: rp || null });
+    }
+    return list;
+  }, [user?._id, remoteParticipants, isGroup, otherUser._id, isCallActive]);
 
   if (isIncomingCall) {
     return (
       <div className="voice-call-notification">
         <div className="notification-content">
-          <div className="notification-avatar">
-            <UserAvatar user={isGroup ? null : otherUser} size={48} />
-          </div>
+          <div className="notification-avatar"><UserAvatar user={isGroup ? null : otherUser} size={48} /></div>
           <div className="notification-info">
             <div className="notification-name">{isGroup ? (dmName || 'Групповой звонок') : otherUser.username}</div>
             <div className="notification-status">Входящий звонок...</div>
@@ -430,39 +436,65 @@ const VoiceCall: React.FC<VoiceCallProps> = ({
           <button className="back-to-app-btn" onClick={onEndCall} title="Свернуть">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
           </button>
-          <div className="call-title">
-            {isGroup ? (dmName || 'Групповой звонок') : `Звонок: ${otherUser.username}`}
-          </div>
+          <div className="call-title">{isGroup ? (dmName || 'Групповой звонок') : `Звонок: ${otherUser.username}`}</div>
         </div>
         <div className="call-duration">{isCallActive ? 'В эфире' : 'Подключение...'}</div>
       </header>
 
       <main className="call-main">
         <div className={`video-grid count-${allParticipants.length}`}>
-          {allParticipants.map((p) => {
-            const stream = p.isLocal ? (isVideoEnabled ? localStream : null) : remoteStreams.get(p.identity);
+          {allParticipants.map((p: any) => {
+            const hasVideo = p.isMe ? isVideoEnabled : p.p?.isCameraEnabled;
             const userMeta = p.isMe ? user : (isGroup ? participantsMetadata.get(p.identity) : otherUser);
-            const isSpeaking = speakingUsers.has(p.identity) || (p.isMe && localSpeaking);
-            const screenShare = p.isLocal ? (isScreenSharing ? screenStream : null) : remoteScreenStreams.get(p.identity);
+            const isSpeaking = speakingUsers.has(p.identity);
+            const screenShare = p.isMe ? isScreenSharing : p.p?.isScreenShareEnabled;
+            const isFocused = focusedParticipant === p.identity;
 
             return (
-              <div key={p.identity} className={`participant-slot ${isSpeaking ? 'speaking' : ''}`}>
-                {stream && stream.getVideoTracks().length > 0 ? (
-                  <video
-                    autoPlay playsInline muted={p.isMe}
-                    ref={el => { if (el && el.srcObject !== stream) el.srcObject = stream; }}
-                    className="participant-video"
-                  />
+              <div key={p.identity} className={`participant-slot ${isFocused ? 'focused' : ''}`}>
+                {hasVideo && p.p ? (
+                  <VideoRenderer participant={p.p} isMe={p.isMe} />
                 ) : (
-                  <div className="participant-placeholder">
-                    <UserAvatar user={userMeta || (p.isMe ? user : null)} size={allParticipants.length > 2 ? 80 : 120} animate={isSpeaking} />
-                    <span>{userMeta?.username || 'Загрузка...'}</span>
+                  <div className="participant-avatar-container">
+                    <div className={`call-avatar-frame ${isSpeaking ? 'is-speaking' : ''}`}>
+                      <UserAvatar 
+                        user={userMeta || (p.isMe ? user : null)} 
+                        size={160} 
+                        className="call-inner-avatar"
+                      />
+                    </div>
+                    <div className="participant-details">
+                       <h3 className="participant-name">{userMeta?.username || (p.isMe ? 'Вы' : 'Загрузка...')}</h3>
+                       {isSpeaking ? (
+                          <div className="speaking-status">ГОВОРИТ</div>
+                       ) : (
+                          !p.isMe && !p.p && isRinging && <div className="ringing-status">ВЫЗОВ...</div>
+                       )}
+                    </div>
                   </div>
                 )}
+                
                 {screenShare && (
-                  <div className="participant-screenshare">
-                    <video autoPlay playsInline muted={p.isMe} ref={el => { if (el && el.srcObject !== screenShare) el.srcObject = screenShare; }} />
-                  </div>
+                   <div className="remote-screen-slot">
+                      <video autoPlay playsInline className="remote-screen-video-full" ref={el => {
+                        if (!el) return;
+                        if (p.isMe) {
+                           const track = roomRef.current?.localParticipant.getTrackPublication(Track.Source.ScreenShare)?.track;
+                           if (track && (track as any).mediaStreamTrack) {
+                              const s = new MediaStream([(track as any).mediaStreamTrack]);
+                              if (el.srcObject !== s) el.srcObject = s;
+                           }
+                        } else {
+                           const s = remoteScreenStreams.get(p.identity);
+                           if (s && el.srcObject !== s) el.srcObject = s;
+                        }
+                      }} />
+                      <div className="screen-share-overlay-controls">
+                         <button className="expand-stream-btn" onClick={() => setFocusedParticipant(focusedParticipant === p.identity ? null : p.identity)}>
+                            {focusedParticipant === p.identity ? 'Свернуть' : 'Развернуть эфир'}
+                         </button>
+                      </div>
+                   </div>
                 )}
                 <div className="participant-label">{userMeta?.username || p.identity} {p.isMe && '(Вы)'}</div>
               </div>
@@ -481,15 +513,17 @@ const VoiceCall: React.FC<VoiceCallProps> = ({
         <button className={`control-circle ${isScreenSharing ? 'active' : ''}`} onClick={() => isScreenSharing ? toggleScreenShare() : setShowScreenSelector(true)} title="Экран">
           <MonitorIcon size={24} />
         </button>
+        <button className="control-divider" disabled />
         <button className="control-circle end-call-circle" onClick={endCall} title="Завершить">
           <span style={{ display: 'flex', transform: 'rotate(135deg)' }}><PhoneIcon size={28} /></span>
         </button>
       </div>
 
-      {Array.from(remoteStreams.entries()).map(([uid, stream]) => (
+      {remoteParticipants.map(participant => (
         <RemoteAudioPlayer
-          key={uid} stream={stream}
-          volume={userVolumes.get(uid) ?? 1}
+          key={participant.identity}
+          participant={participant}
+          volume={userVolumes.get(participant.identity) ?? 1}
           muted={isGlobalDeafened}
         />
       ))}
