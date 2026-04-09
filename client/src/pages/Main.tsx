@@ -713,7 +713,6 @@ const Main: React.FC = () => {
           isGroup={activeCall.isGroup}
           dmName={activeCall.dmName}
           initialIncomingCall={activeCall.isIncoming}
-          initialOffer={activeCall.offer}
           onEndCall={() => setActiveCall(null)}
         />
       )}
