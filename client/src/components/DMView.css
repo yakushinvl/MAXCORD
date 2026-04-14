@@ -545,7 +545,7 @@
 
 /* Input Area */
 .message-input-container {
-  padding: 0 30px 30px;
+  padding: 0 30px calc(30px + env(safe-area-inset-bottom));
   position: relative;
   z-index: 200;
 }

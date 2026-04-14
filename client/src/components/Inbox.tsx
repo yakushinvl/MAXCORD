@@ -1,6 +1,6 @@
 import React from 'react';
 import { useInbox, InboxItem } from '../contexts/InboxContext';
-import { TrashIcon, CheckIcon, MailIcon } from './Icons';
+import { TrashIcon, CheckIcon, MailIcon, CloseIcon } from './Icons';
 import UserAvatar from './UserAvatar';
 import './Inbox.css';
 
@@ -24,6 +24,9 @@ const Inbox: React.FC<InboxProps> = ({ onClose, onItemClick }) => {
     return (
         <div className="inbox-overlay">
             <div className="inbox-header">
+                <button className="inbox-mobile-close" onClick={onClose}>
+                    <CloseIcon size={20} />
+                </button>
                 <h3>Входящие</h3>
                 <div className="inbox-actions">
                     <button className="inbox-action-btn" onClick={markAllAsRead}>Прочитать все</button>

@@ -361,6 +361,9 @@ const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
         <div className="server-settings-modal-overlay">
             <div className="server-settings-modal">
                 <div className="server-settings-sidebar">
+                    <button className="mobile-close-btn" onClick={onClose} title="Назад">
+                        <ChevronLeftIcon size={24} />
+                    </button>
                     <div className="sidebar-header">{server.name}</div>
                     <div className={`sidebar-item ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => { setActiveTab('overview'); setEditingRole(null); }}>Обзор</div>
                     <div className={`sidebar-item ${activeTab === 'roles' ? 'active' : ''}`} onClick={() => { setActiveTab('roles'); setEditingRole(null); }}>Роли</div>

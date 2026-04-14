@@ -5,7 +5,7 @@ import { Channel, Server, Role, PermissionOverwrite } from '../types';
 import { Permissions, hasPermission } from '../utils/permissions';
 import { getAvatarUrl } from '../utils/avatar';
 import { useDialog } from '../contexts/DialogContext';
-import { CloseIcon, TrashIcon, PlusIcon } from './Icons';
+import { ChevronLeftIcon, CloseIcon, TrashIcon, PlusIcon } from './Icons';
 import './ChannelSettingsModal.css';
 
 interface ChannelSettingsModalProps {
@@ -111,6 +111,9 @@ const ChannelSettingsModal: React.FC<ChannelSettingsModalProps> = ({
         <div className="channel-settings-modal-overlay">
             <div className="channel-settings-modal" onClick={(e) => e.stopPropagation()}>
                 <div className="channel-settings-sidebar">
+                    <button className="mobile-close-btn" onClick={onClose} title="Назад">
+                        <ChevronLeftIcon size={24} />
+                    </button>
                     <div className="sidebar-header">{channel.type === 'voice' ? '🔊' : '# '} {channel.name}</div>
 
                     <div className={`sidebar-item ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>

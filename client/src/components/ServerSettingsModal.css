@@ -64,6 +64,10 @@
     z-index: 2;
 }
 
+.mobile-close-btn {
+    display: none;
+}
+
 @media (max-width: 768px) {
     .server-settings-modal {
         flex-direction: column;
@@ -80,6 +84,17 @@
         border-right: none !important;
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         background: rgba(0, 0, 0, 0.4) !important;
+        align-items: center !important;
+    }
+
+    .mobile-close-btn {
+        display: flex !important;
+        background: transparent;
+        border: none;
+        color: white;
+        padding: 5px;
+        margin-right: 5px;
+        cursor: pointer;
     }
     
     .server-settings-sidebar .sidebar-header {
@@ -164,7 +179,7 @@
 
     .save-changes-bar {
         width: calc(100% - 20px) !important;
-        bottom: 10px !important;
+        bottom: calc(10px + env(safe-area-inset-bottom)) !important;
         flex-direction: column;
         gap: 12px;
         padding: 16px !important;

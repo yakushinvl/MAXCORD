@@ -162,16 +162,14 @@ video {
 
 html,
 body {
-  background-color: transparent !important;
-  background: transparent !important;
+  background-color: var(--bg-dark);
   margin: 0;
   overflow: hidden;
-  height: 100vh;
+  height: 100dvh;
   width: 100vw;
   font-size: var(--base-font-size, 16px);
   position: fixed; /* Prevent bouncy scrolling on iOS */
   touch-action: manipulation;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 @media (max-width: 768px) {

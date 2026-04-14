@@ -471,3 +471,64 @@
   from { transform: translateX(100%) scale(0.9); opacity: 0; }
   to { transform: translateX(0) scale(1); opacity: 1; }
 }
+
+@media (max-width: 768px) {
+  .call-topbar {
+    padding: 20px;
+  }
+
+  .call-main {
+    padding: 10px 10px 120px;
+  }
+
+  .video-grid {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .participant-slot {
+    width: 100%;
+    max-height: 45%;
+    border-radius: 20px;
+  }
+
+  .call-avatar-frame {
+    width: 120px;
+    height: 120px;
+  }
+
+  .call-inner-avatar {
+    width: 100px !important;
+    height: 100px !important;
+  }
+
+  .participant-name {
+    font-size: 24px;
+  }
+
+  .call-controls-bar {
+    width: calc(100% - 20px);
+    gap: 10px;
+    padding: 10px;
+    bottom: 20px;
+  }
+
+  .control-circle {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  .end-call-circle {
+    width: 60px;
+  }
+
+  .end-call-circle:hover {
+    width: 70px;
+  }
+
+  .speaking-status, .ringing-status {
+    font-size: 10px;
+    letter-spacing: 2px;
+  }
+}
