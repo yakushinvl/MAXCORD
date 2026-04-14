@@ -305,59 +305,7 @@
     font-weight: 500;
 }
 
-/* Loading State */
-.invite-page-loading {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: #0f1012;
-    color: #dbdee1;
-    gap: 20px;
-}
-
-.loading-spinner-rings {
-    display: inline-block;
-    position: relative;
-    width: 80px;
-    height: 80px;
-}
-
-.loading-spinner-rings div {
-    box-sizing: border-box;
-    display: block;
-    position: absolute;
-    width: 64px;
-    height: 64px;
-    margin: 8px;
-    border: 8px solid #5865f2;
-    border-radius: 50%;
-    animation: loading-spinner-rings 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-    border-color: #5865f2 transparent transparent transparent;
-}
-
-.loading-spinner-rings div:nth-child(1) {
-    animation-delay: -0.45s;
-}
-
-.loading-spinner-rings div:nth-child(2) {
-    animation-delay: -0.3s;
-}
-
-.loading-spinner-rings div:nth-child(3) {
-    animation-delay: -0.15s;
-}
-
-@keyframes loading-spinner-rings {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
+/* Loading State Moved to index.css */
 
 /* Error State */
 .error-icon-glow {

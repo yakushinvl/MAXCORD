@@ -41,13 +41,12 @@ const Main: React.FC = () => {
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [initialUnreadCount, setInitialUnreadCount] = useState(0);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [showFriends, setShowFriends] = useState(true);
+  const [showFriends, setShowFriends] = useState(false);
   const [selectedDM, setSelectedDM] = useState<DirectMessage | null>(null);
   const [dmMessages, setDmMessages] = useState<Message[]>([]);
   const [dms, setDms] = useState<DirectMessage[]>([]);
   const [friends, setFriends] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [initError, setInitError] = useState<string | null>(null);
   const [showInbox, setShowInbox] = useState(false);
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -209,34 +208,34 @@ const Main: React.FC = () => {
       const serversData = response.data;
       setServers(serversData);
 
-      if (!hasViewInitializedRef.current) {
+      if (!hasViewInitializedRef.current && serversData.length > 0 && !selectedServerRef.current) {
         hasViewInitializedRef.current = true;
-        
-        if (serversData.length > 0 && !selectedServerRef.current) {
-          const lastServerId = localStorage.getItem('lastServerId');
-          const savedServer = lastServerId ? serversData.find((s: any) => s._id === lastServerId) : null;
-          const targetServer = savedServer || serversData[0];
 
-          setSelectedServer(targetServer);
+        const lastServerId = localStorage.getItem('lastServerId');
+        const savedServer = lastServerId ? serversData.find((s: any) => s._id === lastServerId) : null;
+        const targetServer = savedServer || serversData[0];
 
-          const lastChannelId = localStorage.getItem('lastChannelId');
-          const savedChannel = lastChannelId ? targetServer.channels.find((c: any) => c._id === lastChannelId) : null;
+        setSelectedServer(targetServer);
 
-          if (savedChannel) {
-            setSelectedChannel(savedChannel);
-          } else {
-            const firstTextChannel = targetServer.channels.find((c: any) => c.type === 'text');
-            if (firstTextChannel) setSelectedChannel(firstTextChannel);
-            else if (targetServer.channels.length > 0) setSelectedChannel(targetServer.channels[0]);
-          }
-        } else if (serversData.length === 0) {
-          setShowFriends(true);
+        const lastChannelId = localStorage.getItem('lastChannelId');
+        const savedChannel = lastChannelId ? targetServer.channels.find((c: any) => c._id === lastChannelId) : null;
+
+        if (savedChannel) {
+          setSelectedChannel(savedChannel);
+        } else {
+          const firstTextChannel = targetServer.channels.find((c: any) => c.type === 'text');
+          if (firstTextChannel) setSelectedChannel(firstTextChannel);
+          else if (targetServer.channels.length > 0) setSelectedChannel(targetServer.channels[0]);
         }
+      } else if (!hasViewInitializedRef.current) {
+        hasViewInitializedRef.current = true;
       }
-    } catch (error) {
-      console.error("fetchServers error:", error);
-    } finally {
-      setLoading(false);
+    } catch (error) { } finally { 
+      setLoading(false); 
+      // Auto-open sidebar on mobile if no server is selected initially
+      if (window.innerWidth <= 768 && !selectedServerRef.current) {
+        setIsMobileSidebarOpen(true);
+      }
     }
   }, []);
 
@@ -592,32 +591,14 @@ const Main: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="global-loading-screen">
-        <div className="loading-content">
-          <div className="loading-spinner-rings">
-            <div></div><div></div><div></div><div></div>
-          </div>
-          <span className="loading-text">Загружаем данные...</span>
-        </div>
+  if (loading) return (
+    <div className="invite-page-loading">
+      <div className="loading-spinner-rings">
+        <div></div><div></div><div></div><div></div>
       </div>
-    );
-  }
-
-  if (initError) {
-    return (
-      <div className="global-loading-screen">
-        <div className="loading-content error">
-          <div className="error-icon">⚠️</div>
-          <span className="loading-text">{initError}</span>
-          <button className="neon-btn" onClick={() => window.location.reload()} style={{ marginTop: '20px' }}>
-            Попробовать снова
-          </button>
-        </div>
-      </div>
-    );
-  }
+      <span>Загрузка интерфейса...</span>
+    </div>
+  );
 
   return (
     <div className={`main-container ${isMobileSidebarOpen ? 'mobile-sidebar-active' : ''} ${isMobileMembersOpen ? 'mobile-members-active' : ''}`}>
@@ -756,10 +737,8 @@ const Main: React.FC = () => {
             <button className="mobile-nav-toggle-fixed" onClick={() => setIsMobileSidebarOpen(true)}>
               <MenuIcon size={24} />
             </button>
-            <div className="empty-view-card">
-              <h2>Добро пожаловать в MAXcord!</h2>
-              <p>Выберите друга или сервер, чтобы начать общение</p>
-            </div>
+            <h2>Добро пожаловать в MAXcord!</h2>
+            <p>Выберите друга или сервер, чтобы начать общение</p>
           </div>
         )}
       </div>

@@ -167,11 +167,11 @@ body {
   margin: 0;
   overflow: hidden;
   height: 100vh;
-  height: 100dvh;
   width: 100vw;
   font-size: var(--base-font-size, 16px);
   position: fixed; /* Prevent bouncy scrolling on iOS */
   touch-action: manipulation;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 @media (max-width: 768px) {
@@ -196,8 +196,7 @@ body {
   background: transparent !important;
 }
 
-/* --- SHARED LIQUID BACKGROUND (Managed in App.tsx) --- */
-/*
+/* --- SHARED LIQUID BACKGROUND --- */
 .liquid-bg-container {
   position: fixed;
   inset: -10%;
@@ -229,7 +228,6 @@ body {
   inset: 0;
   background: radial-gradient(circle at 50% 50%, rgba(0, 229, 255, 0.07), transparent 70%);
 }
-*/
 
 /* --- PREMIUM SCROLLBARS --- */
 ::-webkit-scrollbar {
@@ -322,13 +320,50 @@ body {
 }
 
 @keyframes voicePulse {
-  0% {
-    transform: scale(0.6);
-    opacity: 0.8;
-  }
-
-  100% {
-    transform: scale(1.6);
-    opacity: 0;
-  }
+  0% { transform: scale(0.6); opacity: 0.8; }
+  100% { transform: scale(1.6); opacity: 0; }
 }
+
+/* --- GLOBAL LOADING STATES --- */
+.invite-page-loading {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--text-main);
+  gap: 24px;
+  z-index: 9999;
+}
+
+.loading-spinner-rings {
+  display: inline-block;
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+
+.loading-spinner-rings div {
+  box-sizing: border-box;
+  display: block;
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  margin: 8px;
+  border: 4px solid var(--primary-neon);
+  border-radius: 50%;
+  animation: loading-spinner-rings 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  border-color: var(--primary-neon) transparent transparent transparent;
+  box-shadow: 0 0 15px var(--primary-neon);
+}
+
+.loading-spinner-rings div:nth-child(1) { animation-delay: -0.45s; }
+.loading-spinner-rings div:nth-child(2) { animation-delay: -0.3s; }
+.loading-spinner-rings div:nth-child(3) { animation-delay: -0.15s; }
+
+@keyframes loading-spinner-rings {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
