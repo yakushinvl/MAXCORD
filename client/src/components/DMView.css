@@ -55,6 +55,34 @@
   border-bottom: 1px solid var(--glass-border);
 }
 
+.mobile-nav-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .dm-header {
+    padding: 0 16px;
+    gap: 12px;
+  }
+
+  .mobile-nav-toggle {
+    display: flex;
+  }
+  
+  .dm-header-info {
+    gap: 10px;
+  }
+}
+
 .dm-header-info {
   display: flex;
   align-items: center;

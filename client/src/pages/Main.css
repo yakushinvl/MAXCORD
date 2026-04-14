@@ -8,6 +8,17 @@
   gap: 15px;
   overflow: hidden;
   background: transparent;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (max-width: 768px) {
+  .main-container {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    gap: 0;
+  }
 }
 
 .loading {
@@ -88,6 +99,7 @@
   height: 100%;
   flex-shrink: 0;
   position: relative;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .main-content-area {
@@ -96,4 +108,72 @@
   gap: 15px;
   min-width: 0;
   overflow: hidden;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    background: var(--bg-dark);
+    box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+  }
+
+  .main-container.mobile-sidebar-active .sidebar {
+    transform: translateX(0);
+  }
+
+  .secondary-sidebar-container {
+    position: fixed;
+    left: var(--mobile-sidebar-width);
+    top: 0;
+    bottom: 0;
+    width: calc(100vw - var(--mobile-sidebar-width)) !important;
+    z-index: 999;
+    transform: translateX(-150%);
+    background: var(--bg-dark);
+    box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+  }
+
+  .main-container.mobile-sidebar-active .secondary-sidebar-container {
+    transform: translateX(0);
+  }
+
+  .sidebar-resizer {
+    display: none;
+  }
+
+  .main-content-area {
+    gap: 0;
+  }
+
+  .server-members-container {
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 1000;
+    transform: translateX(100%);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    background: var(--bg-dark);
+    box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+  }
+
+  .main-container.mobile-members-active .server-members-container {
+    transform: translateX(0);
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+    backdrop-filter: blur(4px);
+    transition: opacity 0.4s ease;
+  }
 }

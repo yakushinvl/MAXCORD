@@ -1,6 +1,17 @@
 .server-members {
     width: 240px;
     background: var(--glass-bg);
+    /* ... */
+}
+
+@media (max-width: 768px) {
+    .server-members {
+        width: 100%;
+        border-radius: 0;
+        border: none;
+        background: var(--bg-dark);
+    }
+}
     backdrop-filter: var(--glass-blur);
     border: 1px solid var(--glass-border);
     border-radius: var(--corner-radius);

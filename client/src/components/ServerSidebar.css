@@ -4,6 +4,16 @@
 .server-sidebar {
   width: 260px;
   background: var(--glass-bg);
+  /* ... */
+}
+
+@media (max-width: 768px) {
+  .server-sidebar {
+    width: 100%;
+    border-radius: 0;
+    border: none;
+  }
+}
   backdrop-filter: var(--glass-blur);
   display: flex;
   flex-direction: column;

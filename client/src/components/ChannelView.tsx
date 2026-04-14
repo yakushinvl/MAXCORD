@@ -36,6 +36,8 @@ interface ChannelViewProps {
   onLoadMore?: () => Promise<void>;
   pinnedMessages?: Message[];
   setMessages?: React.Dispatch<React.SetStateAction<Message[]>>;
+  onMobileMenuClick?: () => void;
+  onMobileMembersClick?: () => void;
 }
 
 const MessageItem = React.memo<{
@@ -297,7 +299,8 @@ const MessageItem = React.memo<{
 
 const ChannelView: React.FC<ChannelViewProps> = ({
   channel, server, messages, socket, onUserClick, initialUnreadCount = 0,
-  hasMore = false, isLoadingMore = false, onLoadMore, pinnedMessages = [], setMessages
+  hasMore = false, isLoadingMore = false, onLoadMore, pinnedMessages = [], setMessages,
+  onMobileMenuClick, onMobileMembersClick
 }) => {
   const { user } = useAuth();
   const { confirm, alert } = useDialog();
@@ -791,12 +794,18 @@ const ChannelView: React.FC<ChannelViewProps> = ({
         </div>
       )}
       <div className="channel-header">
+        <button className="mobile-nav-toggle" onClick={onMobileMenuClick}>
+          <MenuIcon size={24} />
+        </button>
         <div className="channel-header-info">
           <span className="channel-icon"><HashtagIcon size={24} color="#8e9297" /></span>
           <h3>{channel.name}</h3>
         </div>
         {channel.topic && <div className="channel-topic">{channel.topic}</div>}
         <div style={{ flex: 1 }} />
+        <button className="mobile-members-toggle" onClick={onMobileMembersClick}>
+          <UsersIcon size={24} />
+        </button>
         <button
           className="header-action-btn"
           onClick={() => setShowPins(!showPins)}

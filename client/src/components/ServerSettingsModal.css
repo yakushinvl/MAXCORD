@@ -64,6 +64,54 @@
     z-index: 2;
 }
 
+@media (max-width: 768px) {
+    .server-settings-modal {
+        flex-direction: column;
+    }
+    
+    .server-settings-sidebar {
+        width: 100% !important;
+        min-width: 0 !important;
+        height: auto !important;
+        padding: 20px !important;
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        display: flex !important;
+    }
+    
+    .server-settings-sidebar .sidebar-header {
+        display: none;
+    }
+    
+    .sidebar-item {
+        white-space: nowrap;
+        padding: 8px 16px !important;
+    }
+
+    .content-scroll-area {
+        padding: 30px 20px !important;
+    }
+    
+    .settings-section h2 {
+        font-size: 24px !important;
+    }
+
+    .overview-grid {
+        flex-direction: column;
+        padding: 20px;
+    }
+    
+    .close-settings-button {
+        top: 20px !important;
+        right: 20px !important;
+    }
+    
+    .close-icon-wrapper {
+        width: 36px !important;
+        height: 36px !important;
+    }
+}
+
 .sidebar-header {
     color: rgba(255, 255, 255, 0.4);
     font-size: 11px;

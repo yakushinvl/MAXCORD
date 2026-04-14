@@ -26,6 +26,36 @@
   border-bottom: 1px solid var(--glass-border);
   background: var(--glass-bg-subtle);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  gap: 12px;
+}
+
+.mobile-nav-toggle,
+.mobile-members-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .channel-header {
+    padding: 0 16px;
+  }
+
+  .mobile-nav-toggle,
+  .mobile-members-toggle {
+    display: flex;
+  }
+
+  .channel-topic {
+    display: none;
+  }
 }
 
 .channel-header-info {

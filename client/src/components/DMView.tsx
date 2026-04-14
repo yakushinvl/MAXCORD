@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useDialog } from '../contexts/DialogContext';
 import axios from 'axios';
 import { getAvatarUrl, getFullUrl } from '../utils/avatar';
-import { SmileIcon, PinIcon, ReplyIcon, TrashIcon, DownloadIcon, DocumentIcon, PlusIcon, PhoneIcon, ArrowDownIcon } from './Icons';
+import { MenuIcon, SmileIcon, PinIcon, ReplyIcon, TrashIcon, DownloadIcon, DocumentIcon, PlusIcon, PhoneIcon, ArrowDownIcon } from './Icons';
 import VoiceCall from './VoiceCall';
 import CustomVideoPlayer from './CustomVideoPlayer';
 import CustomAudioPlayer from './CustomAudioPlayer';
@@ -35,11 +35,13 @@ interface DMViewProps {
   onLoadMore?: () => Promise<void>;
   pinnedMessages?: Message[];
   setMessages?: React.Dispatch<React.SetStateAction<Message[]>>;
+  onMobileMenuClick?: () => void;
 }
 
 const DMView: React.FC<DMViewProps> = ({
   dm, messages, socket, onClose, onStartCall, onStartGroupCall, onUserClick, initialUnreadCount = 0,
-  hasMore = false, isLoadingMore = false, onLoadMore, pinnedMessages = [], setMessages
+  hasMore = false, isLoadingMore = false, onLoadMore, pinnedMessages = [], setMessages,
+  onMobileMenuClick
 }) => {
   const { user } = useAuth();
   const { alert } = useDialog();
@@ -485,6 +487,9 @@ const DMView: React.FC<DMViewProps> = ({
       )}
       <div className="dm-container">
         <div className="dm-header">
+          <button className="mobile-nav-toggle" onClick={onMobileMenuClick}>
+            <MenuIcon size={24} />
+          </button>
           <button className="back-button" onClick={onClose} title="Назад">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="19" y1="12" x2="5" y2="12"></line>

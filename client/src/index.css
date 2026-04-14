@@ -25,6 +25,11 @@
   /* Layout Constants */
   --sidebar-width: 84px;
   --topbar-height: 80px;
+  --mobile-sidebar-width: 72px;
+
+  /* Media Breakpoints */
+  --bp-mobile: 768px;
+  --bp-tablet: 1024px;
 
   /* Performance Tweaks */
   --glass-blur-value: 50px;
@@ -164,6 +169,17 @@ body {
   height: 100vh;
   width: 100vw;
   font-size: var(--base-font-size, 16px);
+  position: fixed; /* Prevent bouncy scrolling on iOS */
+  touch-action: manipulation;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+@media (max-width: 768px) {
+  :root {
+    --corner-radius: 20px;
+    --glass-blur-value: 30px;
+    --base-font-size: 14px;
+  }
 }
 
 body {

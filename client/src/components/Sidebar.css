@@ -15,6 +15,21 @@
   flex-shrink: 0;
 }
 
+@media (max-width: 768px) {
+  .sidebar {
+    width: var(--mobile-sidebar-width);
+    padding: 16px 0;
+    border-radius: 0;
+    border: none;
+    border-right: 1px solid var(--glass-border);
+  }
+  
+  .server-icon {
+    width: 48px;
+    height: 48px;
+  }
+}
+
 .sidebar-servers {
   flex: 1;
   display: flex;

@@ -48,6 +48,8 @@ const Main: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showInbox, setShowInbox] = useState(false);
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isMobileMembersOpen, setIsMobileMembersOpen] = useState(false);
 
   const userRef = useRef(user);
   const selectedServerRef = useRef(selectedServer);
@@ -121,12 +123,16 @@ const Main: React.FC = () => {
         setShowFriends(false);
       } catch (err) { }
     };
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    window.addEventListener('start-dm', handleStartDMEvent);
-    window.addEventListener('start-call', handleStartCallEvent);
-    window.addEventListener('open-server-profile-settings', handleOpenServerProfileSettings);
     window.addEventListener('start-dm-by-id', handleStartDMById);
+
+    // Close mobile sidebars on route changes or selection
+    const closeMobile = () => {
+      setIsMobileSidebarOpen(false);
+      setIsMobileMembersOpen(false);
+    };
+
+    window.addEventListener('close-mobile-nav', closeMobile);
+
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
@@ -134,6 +140,7 @@ const Main: React.FC = () => {
       window.removeEventListener('start-call', handleStartCallEvent);
       window.removeEventListener('open-server-profile-settings', handleOpenServerProfileSettings);
       window.removeEventListener('start-dm-by-id', handleStartDMById);
+      window.removeEventListener('close-mobile-nav', closeMobile);
     };
   }, []);
 
@@ -519,6 +526,7 @@ const Main: React.FC = () => {
     setSelectedChannel(channel);
     setSelectedDM(null);
     setShowFriends(false);
+    setIsMobileSidebarOpen(false);
     if (channel.type === 'voice') setMessages([]);
   };
   const handleStartDM = async (userId: string) => {
@@ -530,6 +538,7 @@ const Main: React.FC = () => {
       setSelectedChannel(null);
       setSelectedServer(null);
       setShowFriends(false);
+      setIsMobileSidebarOpen(false);
     } catch (error) { }
   };
   const handleStartDirectCall = (user: User, dmId: string) => { setActiveCall({ user, isIncoming: false, dmId, isGroup: false }); };
@@ -578,11 +587,15 @@ const Main: React.FC = () => {
   if (loading) return <div className="loading">Загрузка...</div>;
 
   return (
-    <div className="main-container">
+    <div className={`main-container ${isMobileSidebarOpen ? 'mobile-sidebar-active' : ''} ${isMobileMembersOpen ? 'mobile-members-active' : ''}`}>
+      {(isMobileSidebarOpen || isMobileMembersOpen) && (
+        <div className="sidebar-backdrop" onClick={() => { setIsMobileSidebarOpen(false); setIsMobileMembersOpen(false); }} />
+      )}
       <Sidebar
         user={user!} servers={servers} unreadCounts={unreadCounts} selectedServer={selectedServer}
         onServerSelect={(server) => {
           setSelectedServer(server); setShowFriends(false); setSelectedDM(null);
+          setIsMobileSidebarOpen(false);
           const firstTextChannel = server.channels.find(c => c.type === 'text');
           if (firstTextChannel) {
             setMessages([]);
@@ -593,7 +606,7 @@ const Main: React.FC = () => {
         }}
         onCreateServer={handleCreateServer}
         onServerJoined={(server) => { setServers((prev) => [...prev, server]); setSelectedServer(server); if (socket) socket.emit('join-server', server._id); if (server.channels.length > 0) setSelectedChannel(server.channels[0]); }}
-        onLogout={logout} onShowFriends={() => { setShowFriends(true); setSelectedServer(null); setSelectedChannel(null); setSelectedDM(null); }}
+        onLogout={logout} onShowFriends={() => { setShowFriends(true); setSelectedServer(null); setSelectedChannel(null); setSelectedDM(null); setIsMobileSidebarOpen(false); }}
         onServerLeave={handleServerLeave}
         onOpenJoinModal={() => setShowJoinModal(true)}
         onOpenSettings={() => setShowSettingsModal(true)}
@@ -627,10 +640,12 @@ const Main: React.FC = () => {
               setSelectedDM(dm);
               setShowFriends(false);
               setSelectedServer(null);
+              setIsMobileSidebarOpen(false);
             }}
             onShowFriends={() => {
               setShowFriends(true);
               setSelectedDM(null);
+              setIsMobileSidebarOpen(false);
             }}
             onAddDM={() => setShowCreateGroupModal(true)}
             showFriends={showFriends}
@@ -644,7 +659,7 @@ const Main: React.FC = () => {
 
       {/* --- CONTENT AREA --- */}
       <div className="main-content-area">
-        {showFriends && <FriendsPanel onStartDM={handleStartDM} onUserClick={handleUserClick} unreadCounts={unreadCounts} />}
+        {showFriends && <FriendsPanel onStartDM={handleStartDM} onUserClick={handleUserClick} unreadCounts={unreadCounts} onMobileMenuClick={() => setIsMobileSidebarOpen(true)} />}
 
         {selectedChannel && !showFriends && (
           selectedChannel.type === 'text' ? (
@@ -661,6 +676,8 @@ const Main: React.FC = () => {
               onLoadMore={loadMoreMessages}
               pinnedMessages={pinnedMessages}
               setMessages={setMessages}
+              onMobileMenuClick={() => setIsMobileSidebarOpen(true)}
+              onMobileMembersClick={() => setIsMobileMembersOpen(true)}
             />
           ) : (
             <VoiceChannelView
@@ -692,10 +709,13 @@ const Main: React.FC = () => {
             onLoadMore={loadMoreDMMessages}
             pinnedMessages={pinnedMessages.filter(m => m.directMessage === selectedDM._id)}
             setMessages={setDmMessages}
+            onMobileMenuClick={() => setIsMobileSidebarOpen(true)}
           />
         )}
 
-        {selectedServer && !showFriends && <ServerMembers server={selectedServer} onUserClick={handleUserClick} />}
+        <div className="server-members-container">
+          {selectedServer && !showFriends && <ServerMembers server={selectedServer} onUserClick={handleUserClick} />}
+        </div>
 
         {!selectedChannel && !selectedDM && !showFriends && !selectedServer && (
           <div className="empty-view">

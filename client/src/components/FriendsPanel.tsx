@@ -3,7 +3,7 @@ import axios from 'axios';
 import { User, Friendship } from '../types';
 import { getAvatarUrl } from '../utils/avatar';
 import { useSocket } from '../contexts/SocketContext';
-import { ChatIcon, CloseIcon } from './Icons';
+import { ChatIcon, CloseIcon, MenuIcon } from './Icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useDialog } from '../contexts/DialogContext';
 import UserAvatar from './UserAvatar';
@@ -13,11 +13,12 @@ interface FriendsPanelProps {
   onStartDM: (userId: string) => void;
   onUserClick: (userId: string, event?: React.MouseEvent) => void;
   unreadCounts: Record<string, number>;
+  onMobileMenuClick?: () => void;
 }
 
 interface DMDict { [userId: string]: string; }
 
-const FriendsPanel: React.FC<FriendsPanelProps> = ({ onStartDM, onUserClick, unreadCounts }) => {
+const FriendsPanel: React.FC<FriendsPanelProps> = ({ onStartDM, onUserClick, unreadCounts, onMobileMenuClick }) => {
   const { socket } = useSocket();
   const { user: currentUser } = useAuth();
   const { confirm } = useDialog();
@@ -98,6 +99,9 @@ const FriendsPanel: React.FC<FriendsPanelProps> = ({ onStartDM, onUserClick, unr
   return (
     <div className="friends-panel">
       <div className="friends-tabs">
+        <button className="mobile-nav-toggle" onClick={onMobileMenuClick}>
+          <MenuIcon size={24} />
+        </button>
         <button className={activeTab === 'friends' ? 'active' : ''} onClick={() => setActiveTab('friends')}>Друзья</button>
         <button className={activeTab === 'pending' ? 'active' : ''} onClick={() => setActiveTab('pending')}>Запросы</button>
         <button className={activeTab === 'add' ? 'active' : ''} onClick={() => setActiveTab('add')}>Добавить</button>
