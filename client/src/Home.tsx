@@ -12,11 +12,13 @@ const Home: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="invite-page-loading">
-                <div className="loading-spinner-rings">
-                    <div></div><div></div><div></div><div></div>
+            <div className="global-loading-screen">
+                <div className="loading-content">
+                  <div className="loading-spinner-rings">
+                      <div></div><div></div><div></div><div></div>
+                  </div>
+                  <span className="loading-text">Инициализация вашей вселенной...</span>
                 </div>
-                <span>Инициализация...</span>
             </div>
         );
     }

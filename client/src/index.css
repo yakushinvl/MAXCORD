@@ -167,11 +167,11 @@ body {
   margin: 0;
   overflow: hidden;
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
   font-size: var(--base-font-size, 16px);
   position: fixed; /* Prevent bouncy scrolling on iOS */
   touch-action: manipulation;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 @media (max-width: 768px) {
@@ -196,7 +196,8 @@ body {
   background: transparent !important;
 }
 
-/* --- SHARED LIQUID BACKGROUND --- */
+/* --- SHARED LIQUID BACKGROUND (Managed in App.tsx) --- */
+/*
 .liquid-bg-container {
   position: fixed;
   inset: -10%;
@@ -228,6 +229,7 @@ body {
   inset: 0;
   background: radial-gradient(circle at 50% 50%, rgba(0, 229, 255, 0.07), transparent 70%);
 }
+*/
 
 /* --- PREMIUM SCROLLBARS --- */
 ::-webkit-scrollbar {
