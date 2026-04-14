@@ -47,45 +47,166 @@
     width: 100%;
     height: 100%;
     border-radius: 0;
-    flex-direction: column;
+    flex-direction: row; /* Keep row for transitions if needed, but we'll use absolute positioning or display */
+    overflow: hidden;
+    background: #000; /* Cleaner background for mobile menu */
   }
   
+  /* Sidebar as a Menu */
   .settings-sidebar {
     width: 100% !important;
-    height: auto !important;
-    padding: 20px !important;
-    flex-direction: row !important;
-    overflow-x: auto !important;
+    min-width: 100% !important;
+    height: 100% !important;
+    padding: 0 !important;
+    background: #000 !important;
+    border: none !important;
     display: flex !important;
+    flex-direction: column !important;
+    overflow-y: auto !important;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .mobile-content-active .settings-sidebar {
+    transform: translateX(-100%);
+    display: none !important; /* Jump for now, or use absolute */
   }
   
-  .settings-sidebar .sidebar-header {
-    display: none;
+  .settings-sidebar-content {
+    padding: 20px 0 !important;
+  }
+
+  .sidebar-header {
+    padding: 20px 20px 10px !important;
+    font-size: 11px !important;
+    color: var(--primary-neon) !important;
+    opacity: 0.7 !important;
   }
   
   .sidebar-item {
-    white-space: nowrap;
-    padding: 8px 16px !important;
+    margin: 0 !important;
+    padding: 18px 20px !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    font-size: 16px !important;
+    gap: 15px !important;
+    color: white !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    position: relative;
+  }
+
+  /* Chevron arrow on the right for items */
+  .sidebar-item::after {
+    content: '›';
+    position: absolute;
+    right: 20px;
+    font-size: 24px;
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  .sidebar-item.logout {
+    margin-top: 40px !important;
+    color: #ff3b30 !important;
+    border-bottom: none !important;
+  }
+
+  .sidebar-item.logout::after {
+    display: none;
+  }
+
+  .sidebar-item.active::before {
+    display: none;
+  }
+
+  /* Content Area */
+  .settings-main {
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: #000;
+    display: none;
+    z-index: 10;
+  }
+
+  .mobile-content-active .settings-main {
+    display: flex;
   }
 
   .settings-content-wrapper {
-    padding: 30px 20px !important;
+    padding: 0 !important;
+  }
+
+  .settings-content-inner {
+    padding: 60px 20px 40px !important;
   }
   
   .settings-section-title {
     font-size: 28px !important;
-    margin-bottom: 20px !important;
+    margin-bottom: 25px !important;
+  }
+
+  .settings-mobile-back {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: none;
+    color: var(--primary-neon);
+    font-size: 16px;
+    font-weight: 600;
+    padding: 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  /* Grids and Layouts */
+  .theme-selection-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .status-selector-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .voice-settings-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .settings-section-block {
+    padding: 20px !important;
+    border-radius: 20px !important;
+    margin-bottom: 15px !important;
   }
 
   .close-settings-button {
-    top: 20px !important;
-    right: 20px !important;
+    display: none; /* Already have back button for depth, but we need a way to close the whole modal */
   }
-  
-  .close-circle {
-    width: 40px !important;
-    height: 40px !important;
-    border-radius: 12px !important;
+
+  .settings-sidebar-close-mobile {
+    display: flex !important;
+    position: fixed;
+    top: 15px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    z-index: 110;
+    cursor: pointer;
   }
 }
 
@@ -166,12 +287,24 @@
   text-transform: uppercase;
 }
 
-.sidebar-item.logout:hover {
-  background: #ff3b30;
-  color: white;
-  border-color: #ff3b30;
-  box-shadow: 0 0 30px rgba(255, 59, 48, 0.3);
-  transform: translateY(-2px);
+.settings-sidebar-close-mobile,
+.settings-mobile-back {
+  display: none;
+}
+
+.bot-edit-area {
+  margin-top: 25px;
+  padding: 25px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 768px) {
+  .bot-edit-area {
+    padding: 15px !important;
+    border-radius: 16px !important;
+  }
 }
 
 /* --- MAIN CONTENT --- */

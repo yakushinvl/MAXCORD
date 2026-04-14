@@ -4,16 +4,6 @@
 .server-sidebar {
   width: 260px;
   background: var(--glass-bg);
-  /* ... */
-}
-
-@media (max-width: 768px) {
-  .server-sidebar {
-    width: 100%;
-    border-radius: 0;
-    border: none;
-  }
-}
   backdrop-filter: var(--glass-blur);
   display: flex;
   flex-direction: column;
@@ -25,6 +15,14 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   height: 100%;
+}
+
+@media (max-width: 768px) {
+  .server-sidebar {
+    width: 100%;
+    border-radius: 0;
+    border: none;
+  }
 }
 
 /* --- HEADER --- */

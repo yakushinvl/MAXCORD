@@ -5,7 +5,7 @@ import { Channel, User, Server } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
 import { getAvatarUrl, getFullUrl } from '../utils/avatar';
-import { SpeakerIcon, PhoneIcon, MicMutedIcon, MicIcon, DeafenedIcon, MonitorIcon, PlayIcon, MaximizeIcon, MinimizeIcon, VolumeHighIcon, VolumeLowIcon, FullscreenIcon } from './Icons';
+import { MenuIcon, SpeakerIcon, PhoneIcon, MicMutedIcon, MicIcon, DeafenedIcon, MonitorIcon, PlayIcon, MaximizeIcon, MinimizeIcon, VolumeHighIcon, VolumeLowIcon, FullscreenIcon } from './Icons';
 import ScreenSourceSelector from './ScreenSourceSelector';
 import axios from 'axios';
 import MemberContextMenu from './MemberContextMenu';
@@ -18,6 +18,7 @@ interface VoiceChannelViewProps {
   onUserClick: (userId: string, event?: React.MouseEvent) => void;
   onMessageClick: (userId: string) => void;
   onCallClick: (userId: string) => void;
+  onMobileMenuClick?: () => void;
 }
 
 const VoiceParticipantCard = React.memo<{
@@ -253,7 +254,7 @@ const VoiceStreamCard: React.FC<{
     return cardContent;
   };
 
-const VoiceChannelView: React.FC<VoiceChannelViewProps> = ({ channel, server, onUserClick, onMessageClick, onCallClick }) => {
+const VoiceChannelView: React.FC<VoiceChannelViewProps> = ({ channel, server, onUserClick, onMessageClick, onCallClick, onMobileMenuClick }) => {
   const { user: currentUser } = useAuth();
   const { socket } = useSocket();
   const {
@@ -490,6 +491,9 @@ const VoiceChannelView: React.FC<VoiceChannelViewProps> = ({ channel, server, on
     <div className="voice-channel-view">
       <header className="voice-hdr">
         <div className="hdr-left">
+          <button className="mobile-nav-toggle" onClick={onMobileMenuClick}>
+            <MenuIcon size={24} />
+          </button>
           <h1>
             <div className="voice-status-indicator inline">
               <div className="pulse-ring"></div>

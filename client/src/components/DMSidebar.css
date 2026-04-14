@@ -1,16 +1,6 @@
 .dm-sidebar {
     width: 240px;
     background: var(--glass-bg);
-    /* ... */
-}
-
-@media (max-width: 768px) {
-    .dm-sidebar {
-        width: 100%;
-        border-radius: 0;
-        border: none;
-    }
-}
     backdrop-filter: var(--glass-blur);
     display: flex;
     flex-direction: column;
@@ -20,6 +10,14 @@
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .dm-sidebar {
+        width: 100%;
+        border-radius: 0;
+        border: none;
+    }
 }
 
 .dm-sidebar-header {

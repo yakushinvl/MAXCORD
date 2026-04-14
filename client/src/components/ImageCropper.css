@@ -153,3 +153,32 @@
 .cropper-btn-save:hover {
     background: #4752c4;
 }
+
+@media (max-width: 768px) {
+    .cropper-container {
+        width: 100%;
+        height: 100%;
+        max-width: none;
+        border-radius: 0;
+    }
+
+    .cropper-wrapper {
+        height: 300px;
+    }
+
+    .cropper-content {
+        padding: 16px;
+    }
+
+    .cropper-footer {
+        padding: 20px;
+        flex-direction: column-reverse;
+    }
+
+    .cropper-btn-save, .cropper-btn-cancel {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        border-radius: 8px;
+    }
+}

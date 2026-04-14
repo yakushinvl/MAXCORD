@@ -23,7 +23,8 @@ import {
   SmartphoneIcon,
   EllipsisIcon,
   CameraIcon,
-  BotIcon
+  BotIcon,
+  ChevronLeftIcon
 } from './Icons';
 import ImageCropper from './ImageCropper';
 import './SettingsModal.css';
@@ -141,6 +142,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   } = useWindowSettings();
 
   const [activeTab, setActiveTab] = useState<SettingsTab>('account');
+  const [showMobileContent, setShowMobileContent] = useState(false);
+
+  const handleTabClick = (tab: SettingsTab) => {
+    setActiveTab(tab);
+    setShowMobileContent(true);
+  };
 
   // Account Form State
   const [username, setUsername] = useState(user?.username || '');
@@ -946,35 +953,38 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
 
 
   return (
-    <div className="settings-modal-overlay" onClick={onClose}>
+    <div className={`settings-modal-overlay ${showMobileContent ? 'mobile-content-active' : ''}`} onClick={onClose}>
       <div className="settings-modal-container" onClick={e => e.stopPropagation()}>
 
         {/* Sidebar */}
         <div className="settings-sidebar">
+          <button className="settings-sidebar-close-mobile" onClick={onClose}>
+            <CloseIcon size={24} />
+          </button>
           <div className="settings-sidebar-content">
 
             <div className="sidebar-header">Настройки пользователя</div>
             <div
               className={`sidebar-item ${activeTab === 'account' ? 'active' : ''}`}
-              onClick={() => setActiveTab('account')}
+              onClick={() => handleTabClick('account')}
             >
               <UsersIcon size={18} /> Моя учётная запись
             </div>
             <div
               className={`sidebar-item ${activeTab === 'privacy' ? 'active' : ''}`}
-              onClick={() => setActiveTab('privacy')}
+              onClick={() => handleTabClick('privacy')}
             >
               <ShieldIcon size={18} /> Данные и конфиденциальность
             </div>
             <div
               className={`sidebar-item ${activeTab === 'devices' ? 'active' : ''}`}
-              onClick={() => setActiveTab('devices')}
+              onClick={() => handleTabClick('devices')}
             >
               <SmartphoneIcon size={18} /> Устройства
             </div>
             <div
               className={`sidebar-item ${activeTab === 'bots' ? 'active' : ''}`}
-              onClick={() => setActiveTab('bots')}
+              onClick={() => handleTabClick('bots')}
             >
               <BotIcon size={18} /> Мои боты
             </div>
@@ -984,43 +994,43 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             <div className="sidebar-header">Настройки приложения</div>
             <div
               className={`sidebar-item ${activeTab === 'appearance' ? 'active' : ''}`}
-              onClick={() => setActiveTab('appearance')}
+              onClick={() => handleTabClick('appearance')}
             >
               <PaletteIcon size={18} /> Внешний вид
             </div>
             <div
               className={`sidebar-item ${activeTab === 'voice' ? 'active' : ''}`}
-              onClick={() => setActiveTab('voice')}
+              onClick={() => handleTabClick('voice')}
             >
               <SpeakerIcon size={18} /> Голос и видео
             </div>
             <div
               className={`sidebar-item ${activeTab === 'chat' ? 'active' : ''}`}
-              onClick={() => setActiveTab('chat')}
+              onClick={() => handleTabClick('chat')}
             >
               <ChatIcon size={18} /> Чат
             </div>
             <div
               className={`sidebar-item ${activeTab === 'keybinds' ? 'active' : ''}`}
-              onClick={() => setActiveTab('keybinds')}
+              onClick={() => handleTabClick('keybinds')}
             >
               <KeyboardIcon size={18} /> Горячие клавиши
             </div>
             <div
               className={`sidebar-item ${activeTab === 'windows' ? 'active' : ''}`}
-              onClick={() => setActiveTab('windows')}
+              onClick={() => handleTabClick('windows')}
             >
               <MonitorIcon size={18} /> Настройки Windows
             </div>
             <div
               className={`sidebar-item ${activeTab === 'streamer' ? 'active' : ''}`}
-              onClick={() => setActiveTab('streamer')}
+              onClick={() => handleTabClick('streamer')}
             >
               <CameraIcon size={18} /> Режим стримера
             </div>
             <div
               className={`sidebar-item ${activeTab === 'advanced' ? 'active' : ''}`}
-              onClick={() => setActiveTab('advanced')}
+              onClick={() => handleTabClick('advanced')}
             >
               <EllipsisIcon size={18} /> Расширенные
             </div>
@@ -1030,7 +1040,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             <div className="sidebar-header">Настройки активности</div>
             <div
               className={`sidebar-item ${activeTab === 'activity' ? 'active' : ''}`}
-              onClick={() => setActiveTab('activity')}
+              onClick={() => handleTabClick('activity')}
             >
               <ShieldIcon size={18} /> Конфиденциальность активности
             </div>
@@ -1060,6 +1070,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
         {/* Main Content */}
         <div className="settings-main">
           <div className="settings-content-wrapper">
+            <button className="settings-mobile-back" onClick={() => setShowMobileContent(false)}>
+              <ChevronLeftIcon size={20} /> Назад
+            </button>
             <div className="settings-content-inner">
               {activeTab === 'account' && renderAccountSettings()}
               {activeTab === 'privacy' && renderPlaceholder('Данные и конфиденциальность', <ShieldIcon size={80} />)}
@@ -1345,7 +1358,7 @@ const BotsSettings = () => {
             </div>
 
             {editingBot?._id === bot._id && (
-              <div className="bot-edit-area" style={{ marginTop: '25px', padding: '25px', background: 'rgba(0,0,0,0.15)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div className="bot-edit-area">
                 <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', color: 'white' }}>Редактирование бота</h3>
 
                 <div className="user-settings-account-card" style={{ marginBottom: '25px' }}>

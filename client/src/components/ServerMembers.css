@@ -1,7 +1,13 @@
 .server-members {
     width: 240px;
     background: var(--glass-bg);
-    /* ... */
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--corner-radius);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
 }
 
 @media (max-width: 768px) {
@@ -11,14 +17,6 @@
         border: none;
         background: var(--bg-dark);
     }
-}
-    backdrop-filter: var(--glass-blur);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--corner-radius);
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
 }
 
 .members-list {

@@ -25,6 +25,7 @@ import JoinServerModal from '../components/JoinServerModal';
 import SettingsModal from '../components/SettingsModal';
 import Inbox from '../components/Inbox';
 import CreateGroupDMModal from '../components/CreateGroupDMModal';
+import { MenuIcon } from '../components/Icons';
 import './Main.css';
 
 const Main: React.FC = () => {
@@ -689,6 +690,7 @@ const Main: React.FC = () => {
                   if (other) handleStartDirectCall(other, response.data._id);
                 } catch (e) { }
               }}
+              onMobileMenuClick={() => setIsMobileSidebarOpen(true)}
             />
           )
         )}
@@ -717,8 +719,11 @@ const Main: React.FC = () => {
           {selectedServer && !showFriends && <ServerMembers server={selectedServer} onUserClick={handleUserClick} />}
         </div>
 
-        {!selectedChannel && !selectedDM && !showFriends && !selectedServer && (
+        {!selectedChannel && !selectedDM && !showFriends && (
           <div className="empty-view">
+            <button className="mobile-nav-toggle-fixed" onClick={() => setIsMobileSidebarOpen(true)}>
+              <MenuIcon size={24} />
+            </button>
             <h2>Добро пожаловать в MAXcord!</h2>
             <p>Выберите друга или сервер, чтобы начать общение</p>
           </div>

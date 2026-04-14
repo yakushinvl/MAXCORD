@@ -176,4 +176,28 @@
     backdrop-filter: blur(4px);
     transition: opacity 0.4s ease;
   }
+
+  .mobile-nav-toggle-fixed {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 100;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+  }
+
+  .empty-view {
+    padding: 20px;
+    text-align: center;
+  }
+}
 }

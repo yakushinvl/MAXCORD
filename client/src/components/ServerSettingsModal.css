@@ -73,10 +73,13 @@
         width: 100% !important;
         min-width: 0 !important;
         height: auto !important;
-        padding: 20px !important;
+        padding: 10px !important;
         flex-direction: row !important;
         overflow-x: auto !important;
         display: flex !important;
+        border-right: none !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        background: rgba(0, 0, 0, 0.4) !important;
     }
     
     .server-settings-sidebar .sidebar-header {
@@ -85,30 +88,97 @@
     
     .sidebar-item {
         white-space: nowrap;
-        padding: 8px 16px !important;
+        padding: 10px 16px !important;
+        font-size: 13px !important;
+        gap: 8px !important;
+    }
+
+    .sidebar-item.active {
+        border-left: none !important;
+        border-bottom: 2px solid var(--primary-neon);
+        padding-left: 16px !important;
+        border-radius: 0;
     }
 
     .content-scroll-area {
-        padding: 30px 20px !important;
+        padding: 20px 16px !important;
     }
     
     .settings-section h2 {
         font-size: 24px !important;
+        margin-bottom: 20px !important;
     }
 
     .overview-grid {
         flex-direction: column;
-        padding: 20px;
+        padding: 24px !important;
+        gap: 24px !important;
+        align-items: center;
+        text-align: center;
     }
-    
+
+    .avatar-upload-section {
+        width: 100% !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .banner-preview-small {
+        height: 120px !important;
+    }
+
+    .role-color-editor {
+        flex-direction: column;
+    }
+
+    .role-color-editor input[type="text"] {
+        width: 100% !important;
+    }
+
+    .permission-item {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 15px;
+    }
+
     .close-settings-button {
-        top: 20px !important;
-        right: 20px !important;
+        top: 8px !important;
+        right: 8px !important;
+        flex-direction: row !important;
+        background: rgba(0,0,0,0.5);
+        padding: 6px 12px;
+        border-radius: 20px;
+        border: 1px solid rgba(255,255,255,0.1);
     }
     
     .close-icon-wrapper {
-        width: 36px !important;
-        height: 36px !important;
+        width: 32px !important;
+        height: 32px !important;
+        border-radius: 8px !important;
+    }
+
+    .close-text {
+        display: none;
+    }
+
+    .save-changes-bar {
+        width: calc(100% - 20px) !important;
+        bottom: 10px !important;
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px !important;
+        border-radius: 16px !important;
+    }
+
+    .save-changes-buttons {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .save-button {
+        flex: 1;
+        padding: 0 16px !important;
     }
 }
 

@@ -23,7 +23,23 @@
   align-items: center;
 }
 
+.mobile-nav-toggle {
+  display: none;
+}
+
 @media (max-width: 768px) {
+  .mobile-nav-toggle {
+    display: flex;
+    background: transparent;
+    border: none;
+    color: var(--primary-neon);
+    cursor: pointer;
+    padding: 8px;
+    margin-right: 8px;
+    align-items: center;
+    justify-content: center;
+  }
+
   .friends-tabs {
     padding: 16px;
     gap: 8px;

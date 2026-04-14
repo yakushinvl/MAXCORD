@@ -59,6 +59,41 @@
   gap: 16px;
 }
 
+.mobile-nav-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .voice-hdr {
+    padding: 0 16px;
+  }
+  
+  .mobile-nav-toggle {
+    display: flex;
+  }
+  
+  .voice-status-indicator.inline {
+    display: none;
+  }
+  
+  .channel-topic-tag {
+    display: none;
+  }
+
+  .v-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 .hdr-right {
   display: flex;
   align-items: center;
