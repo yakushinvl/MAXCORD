@@ -58,6 +58,7 @@
     min-width: 100% !important;
     height: 100% !important;
     padding: 0 !important;
+    padding-top: calc(env(safe-area-inset-top) + 20px) !important;
     background: #000 !important;
     border: none !important;
     display: flex !important;
@@ -72,7 +73,7 @@
   }
   
   .settings-sidebar-content {
-    padding: 20px 0 !important;
+    padding: 40px 0 20px !important;
   }
 
   .sidebar-header {
@@ -141,7 +142,7 @@
   }
 
   .settings-content-inner {
-    padding: 60px 20px 40px !important;
+    padding: 80px 20px 40px !important;
   }
   
   .settings-section-title {
@@ -160,7 +161,7 @@
     font-weight: 600;
     padding: 20px;
     position: fixed;
-    top: 0;
+    top: env(safe-area-inset-top);
     left: 0;
     width: 100%;
     z-index: 100;
@@ -195,7 +196,7 @@
   .settings-sidebar-close-mobile {
     display: flex !important;
     position: fixed;
-    top: 15px;
+    top: calc(env(safe-area-inset-top) + 20px);
     right: 20px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.1);
