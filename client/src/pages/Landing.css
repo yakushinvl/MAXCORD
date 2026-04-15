@@ -449,7 +449,7 @@ footer {
 
 @media (max-width: 768px) {
     .landing-nav {
-        padding: 15px 20px;
+        padding: calc(12px + env(safe-area-inset-top)) 20px 12px;
     }
 
     .nav-links {
@@ -462,7 +462,7 @@ footer {
     }
 
     .hero-section {
-        padding: 140px 20px 60px;
+        padding: calc(120px + env(safe-area-inset-top)) 20px 60px;
     }
 
     .hero-h1 {
