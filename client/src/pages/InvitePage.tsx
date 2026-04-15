@@ -129,11 +129,24 @@ const InvitePage: React.FC = () => {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                                 {!isElectron ? (
                                     <>
-                                        <button className="neon-btn" onClick={() => { window.location.href = `maxcord://invite/${code}`; }}>
-                                            Открыть в приложении
+                                        <button className="neon-btn" onClick={handleJoin} disabled={joining}>
+                                            {joining ? 'Выполняется вход...' : 'Продолжить в браузере'}
                                         </button>
-                                        <button style={{ background: 'transparent', border: 'none', color: 'var(--text-dim)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => window.open('https://github.com/yakushinvl/maxcord/releases', '_blank')}>
-                                            Установить MAXCORD
+                                        <button 
+                                            style={{ 
+                                                background: 'rgba(255,255,255,0.05)', 
+                                                border: '1px solid var(--glass-border)', 
+                                                color: 'white', 
+                                                padding: '12px 20px', 
+                                                borderRadius: '12px', 
+                                                fontSize: '14px', 
+                                                fontWeight: 700, 
+                                                cursor: 'pointer',
+                                                transition: 'all 0.3s ease'
+                                            }} 
+                                            onClick={() => { window.location.href = `maxcord://invite/${code}`; }}
+                                        >
+                                            Открыть в приложении
                                         </button>
                                     </>
                                 ) : (
