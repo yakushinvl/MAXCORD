@@ -11,8 +11,12 @@ const Login: React.FC = () => {
   const [mode, setMode] = useState<'login' | 'mfa' | 'forgot' | 'reset'>('login');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const { login, verifyLogin, forgotPassword, resetPassword } = useAuth();
+  const { user, login, verifyLogin, forgotPassword, resetPassword } = useAuth();
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (user) navigate('/', { replace: true });
+  }, [user, navigate]);
 
   const handleModeChange = (newMode: 'login' | 'mfa' | 'forgot' | 'reset') => {
     setMode(newMode);

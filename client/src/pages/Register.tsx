@@ -10,8 +10,12 @@ const Register: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const { register } = useAuth();
+  const { user, register } = useAuth();
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (user) navigate('/', { replace: true });
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

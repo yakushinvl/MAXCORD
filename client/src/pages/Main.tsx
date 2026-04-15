@@ -126,7 +126,56 @@ const Main: React.FC = () => {
     };
     window.addEventListener('start-dm-by-id', handleStartDMById);
 
-    // Close mobile sidebars on route changes or selection
+    // Gesture logic
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      const touchEndX = e.changedTouches[0].clientX;
+      const touchEndY = e.changedTouches[0].clientY;
+      const deltaX = touchEndX - touchStartX;
+      const deltaY = touchEndY - touchStartY;
+
+      // Vertical movement threshold to avoid accidental horizontal swipes during scroll
+      if (Math.abs(deltaY) > Math.abs(deltaX)) return;
+
+      if (Math.abs(deltaX) > 80) { // Threshold for swipe
+        if (deltaX > 0) { // Swipe Right (Open Sidebar or Close Members)
+          if (isMobileMembersOpen) {
+            setIsMobileMembersOpen(false);
+          } else if (!isMobileSidebarOpen && touchStartX < window.innerWidth * 0.25) {
+            setIsMobileSidebarOpen(true);
+          }
+        } else { // Swipe Left (Open Members or Close Sidebar)
+          if (isMobileSidebarOpen) {
+            setIsMobileSidebarOpen(false);
+          } else if (!isMobileMembersOpen && touchStartX > window.innerWidth * 0.75) {
+            // Only open members if server is selected
+            if (selectedServer) setIsMobileMembersOpen(true);
+          }
+        }
+      }
+    };
+
+    // Block back to landing/auth
+    const handlePopState = (e: PopStateEvent) => {
+      // Prevents back button from leaving the app
+      window.history.pushState(null, '', window.location.href);
+    };
+
+    // Initialize history state to block back
+    window.history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', handlePopState);
+
+    document.addEventListener('touchstart', handleTouchStart);
+    document.addEventListener('touchend', handleTouchEnd);
+
+    // Close mobile sidebars on selection
     const closeMobile = () => {
       setIsMobileSidebarOpen(false);
       setIsMobileMembersOpen(false);
@@ -142,8 +191,11 @@ const Main: React.FC = () => {
       window.removeEventListener('open-server-profile-settings', handleOpenServerProfileSettings);
       window.removeEventListener('start-dm-by-id', handleStartDMById);
       window.removeEventListener('close-mobile-nav', closeMobile);
+      window.removeEventListener('popstate', handlePopState);
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, []);
+  }, [isMobileSidebarOpen, isMobileMembersOpen, selectedServer]);
 
   useEffect(() => {
     // @ts-ignore

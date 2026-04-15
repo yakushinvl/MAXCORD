@@ -110,6 +110,7 @@
     bottom: 0;
     gap: 0;
     background: var(--bg-dark);
+    touch-action: pan-y;
   }
 
   .sidebar {
