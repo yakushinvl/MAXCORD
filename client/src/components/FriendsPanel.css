@@ -35,7 +35,7 @@
 }
 
 .mobile-nav-toggle {
-  display: none;
+  display: none !important;
 }
 
 @media (max-width: 768px) {
@@ -47,7 +47,7 @@
   }
 
   .mobile-nav-toggle {
-    display: flex;
+    display: flex !important;
     background: transparent;
     border: none;
     color: var(--primary-neon);

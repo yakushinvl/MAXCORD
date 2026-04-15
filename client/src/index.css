@@ -22,10 +22,10 @@
   --corner-radius: 36px;
   --liquid-specular: linear-gradient(145deg, rgba(255, 255, 255, 0.15) 0%, transparent 40%, transparent 75%, rgba(255, 255, 255, 0.05) 100%);
 
-  /* Layout Constants */
-  --sidebar-width: 84px;
-  --topbar-height: 80px;
-  --mobile-sidebar-width: 72px;
+  /* Layout Constants (using rem for adaptive scaling) */
+  --sidebar-width: 5.25rem;
+  --topbar-height: 5rem;
+  --mobile-sidebar-width: 4.5rem;
 
   /* Media Breakpoints */
   --bp-mobile: 768px;
@@ -38,7 +38,7 @@
   --fast-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Icon Tokens */
-  --icon-stroke: 2px;
+  --icon-stroke: 0.125rem;
   --icon-color: currentColor;
   --icon-transition: all 0.3s ease;
 }
@@ -64,13 +64,39 @@ video {
   --performance-mode-transition: none;
 }
 
+/* --- ADAPTIVE ROOT SCALING --- */
+html {
+  /* Default base font size */
+  font-size: 16px;
+}
+
+@media (min-width: 1025px) {
+  html {
+    /* Adaptive scaling for desktop:
+       Scales with viewport width (0.8333vw = 16px at 1920px).
+       Clamp keeps it within readable limits. */
+    font-size: clamp(14px, 0.8333vw, 18px);
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --corner-radius: 20px;
+    --glass-blur-value: 30px;
+  }
+  
+  html {
+    font-size: 14px;
+  }
+}
+
 /* --- GLOBAL LIQUID COMPONENTS --- */
 .neon-btn {
   background: linear-gradient(135deg, var(--primary-neon), var(--secondary-neon));
   color: #ffffff !important;
   border: none;
-  padding: 14px 28px;
-  border-radius: 16px;
+  padding: 0.875rem 1.75rem;
+  border-radius: 1rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -83,15 +109,15 @@ video {
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .auth-input-glass {
   width: 100%;
-  padding: 15px 20px;
+  padding: 0.9375rem 1.25rem;
   background: rgba(255, 255, 255, 0.03) !important;
   border: 1px solid var(--glass-border) !important;
-  border-radius: 16px !important;
+  border-radius: 1rem !important;
   color: white !important;
   outline: none !important;
   transition: all 0.4s ease;
@@ -99,59 +125,33 @@ video {
 }
 
 .auth-label-neon {
-  font-size: 10px;
+  font-size: 0.625rem;
   color: #ffffff;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 2px;
-  margin-bottom: 8px;
-  margin-left: 5px;
+  margin-bottom: 0.5rem;
+  margin-left: 0.3125rem;
   display: block;
 }
 
 /* --- GLOBAL ANIMATIONS --- */
 @keyframes gradientMove {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
-  }
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 @keyframes liquidFloat {
-  0% {
-    transform: scale(1) translate(0, 0);
-  }
-
-  33% {
-    transform: scale(0.95) translate(-1%, 2%);
-  }
-
-  66% {
-    transform: scale(1.02) translate(1%, -1%);
-  }
-
-  100% {
-    transform: scale(1) translate(0, 0);
-  }
+  0% { transform: scale(1) translate(0, 0); }
+  33% { transform: scale(0.95) translate(-1%, 2%); }
+  66% { transform: scale(1.02) translate(1%, -1%); }
+  100% { transform: scale(1) translate(0, 0); }
 }
 
 @keyframes float {
-
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
-
-  50% {
-    transform: translateY(-20px) rotate(2deg);
-  }
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(2deg); }
 }
 
 * {
@@ -167,17 +167,8 @@ body {
   overflow: hidden;
   height: 100dvh;
   width: 100vw;
-  font-size: var(--base-font-size, 16px);
   position: fixed; /* Prevent bouncy scrolling on iOS */
   touch-action: manipulation;
-}
-
-@media (max-width: 768px) {
-  :root {
-    --corner-radius: 20px;
-    --glass-blur-value: 30px;
-    --base-font-size: 14px;
-  }
 }
 
 body {
@@ -229,8 +220,8 @@ body {
 
 /* --- PREMIUM SCROLLBARS --- */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 0.5rem;
+  height: 0.5rem;
 }
 
 ::-webkit-scrollbar-track {
@@ -240,8 +231,8 @@ body {
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
-  border-radius: 100px;
-  border: 2px solid transparent;
+  border-radius: 6.25rem;
+  border: 0.125rem solid transparent;
   background-clip: content-box;
 }
 
@@ -282,8 +273,8 @@ body {
 .mention-tag {
   background: rgba(0, 229, 255, 0.1);
   color: var(--primary-neon);
-  padding: 1px 4px;
-  border-radius: 4px;
+  padding: 0.0625rem 0.25rem;
+  border-radius: 0.25rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -305,7 +296,7 @@ body {
 
 .message.mention-highlight {
   background: rgba(255, 174, 0, 0.05) !important;
-  border-left: 3px solid #ffae00;
+  border-left: 0.1875rem solid #ffae00;
   position: relative;
 }
 
@@ -332,25 +323,25 @@ body {
   justify-content: center;
   background: transparent;
   color: var(--text-main);
-  gap: 24px;
+  gap: 1.5rem;
   z-index: 9999;
 }
 
 .loading-spinner-rings {
   display: inline-block;
   position: relative;
-  width: 80px;
-  height: 80px;
+  width: 5rem;
+  height: 5rem;
 }
 
 .loading-spinner-rings div {
   box-sizing: border-box;
   display: block;
   position: absolute;
-  width: 64px;
-  height: 64px;
-  margin: 8px;
-  border: 4px solid var(--primary-neon);
+  width: 4rem;
+  height: 4rem;
+  margin: 0.5rem;
+  border: 0.25rem solid var(--primary-neon);
   border-radius: 50%;
   animation: loading-spinner-rings 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
   border-color: var(--primary-neon) transparent transparent transparent;
@@ -364,4 +355,4 @@ body {
 @keyframes loading-spinner-rings {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
-}
+}
