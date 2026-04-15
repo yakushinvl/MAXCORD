@@ -11,6 +11,11 @@
   overflow: hidden;
   position: relative;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
+}
+
+.friends-panel * {
+  box-sizing: border-box;
 }
 
 .friends-tabs {
@@ -34,23 +39,33 @@
 }
 
 @media (max-width: 768px) {
+  .friends-panel {
+    border: none;
+    border-radius: 0;
+    width: 100%;
+    margin: 0;
+  }
+
   .mobile-nav-toggle {
     display: flex;
     background: transparent;
     border: none;
     color: var(--primary-neon);
     cursor: pointer;
-    padding: 8px;
-    margin-right: 8px;
+    padding: 0;
+    margin-right: 12px;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
   }
 
   .friends-tabs {
-    padding: 16px;
+    padding: 12px 16px;
     gap: 8px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.02);
   }
   
   .friends-tabs::-webkit-scrollbar {
@@ -58,11 +73,12 @@
   }
 
   .friends-tabs button {
-    padding: 10px;
+    padding: 8px 12px;
     font-size: 11px;
     white-space: nowrap;
     justify-content: center;
-    border-radius: 14px;
+    border-radius: 10px;
+    flex-shrink: 0;
   }
 
   .tab-label {
@@ -70,19 +86,22 @@
   }
 
   .friends-content {
-    padding: 12px;
+    padding: 16px;
   }
 
   .friend-item,
   .request-item,
   .search-result-item {
-    gap: 10px;
-    padding: 12px 15px;
+    gap: 12px;
+    padding: 12px 16px;
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
   }
 
   .friend-actions,
   .request-actions {
-    gap: 6px;
+    gap: 8px;
   }
 
   .add-button,
@@ -94,8 +113,8 @@
   }
 
   .test-action-btn {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
   }
 }
 
