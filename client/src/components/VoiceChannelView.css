@@ -252,7 +252,7 @@
   inset: 0;
   z-index: 10001;
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
   background: #000;
   border-radius: 0;
   border: none;

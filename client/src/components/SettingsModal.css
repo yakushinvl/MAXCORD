@@ -28,7 +28,7 @@
 .settings-modal-container {
   width: 95%;
   max-width: 1200px;
-  height: 90vh;
+  height: 90dvh;
   display: flex;
   background: rgba(255, 255, 255, 0.02);
   backdrop-filter: blur(40px) saturate(180%);
@@ -504,6 +504,7 @@
   color: black;
   font-size: 40px;
   font-weight: 900;
+  min-height: 90dvh;
 }
 
 .avatar-overlay {
