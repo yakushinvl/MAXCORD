@@ -494,18 +494,7 @@
   transition: all 0.4s ease;
 }
 
-.avatar-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--primary-neon), var(--secondary-neon));
-  color: black;
-  font-size: 40px;
-  font-weight: 900;
-  min-height: 90dvh;
-}
+
 
 .avatar-overlay {
   position: absolute;

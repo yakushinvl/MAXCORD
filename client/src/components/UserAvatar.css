@@ -57,14 +57,16 @@
 
 .avatar-placeholder {
     border-radius: inherit;
-    background: linear-gradient(135deg, #444, #222);
+    background: linear-gradient(135deg, var(--primary-neon), var(--secondary-neon));
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 600;
+    font-weight: 800;
     flex-shrink: 0;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    aspect-ratio: 1/1;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.1);
 }
 
 .avatar-loading-placeholder {
