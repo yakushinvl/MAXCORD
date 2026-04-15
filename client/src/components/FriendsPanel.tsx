@@ -3,7 +3,7 @@ import axios from 'axios';
 import { User, Friendship } from '../types';
 import { getAvatarUrl } from '../utils/avatar';
 import { useSocket } from '../contexts/SocketContext';
-import { ChatIcon, CloseIcon, MenuIcon } from './Icons';
+import { ChatIcon, CloseIcon, MenuIcon, UsersIcon, HistoryIcon, UserPlusIcon } from './Icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useDialog } from '../contexts/DialogContext';
 import UserAvatar from './UserAvatar';
@@ -102,9 +102,18 @@ const FriendsPanel: React.FC<FriendsPanelProps> = ({ onStartDM, onUserClick, unr
         <button className="mobile-nav-toggle" onClick={onMobileMenuClick}>
           <MenuIcon size={24} />
         </button>
-        <button className={activeTab === 'friends' ? 'active' : ''} onClick={() => setActiveTab('friends')}>Друзья</button>
-        <button className={activeTab === 'pending' ? 'active' : ''} onClick={() => setActiveTab('pending')}>Запросы</button>
-        <button className={activeTab === 'add' ? 'active' : ''} onClick={() => setActiveTab('add')}>Добавить</button>
+        <button className={activeTab === 'friends' ? 'active' : ''} onClick={() => setActiveTab('friends')}>
+          <UsersIcon size={18} />
+          <span className="tab-label">Друзья</span>
+        </button>
+        <button className={activeTab === 'pending' ? 'active' : ''} onClick={() => setActiveTab('pending')}>
+          <HistoryIcon size={18} />
+          <span className="tab-label">Запросы</span>
+        </button>
+        <button className={activeTab === 'add' ? 'active' : ''} onClick={() => setActiveTab('add')}>
+          <UserPlusIcon size={18} />
+          <span className="tab-label">Добавить</span>
+        </button>
       </div>
       <div className="friends-content custom-scrollbar">
         {activeTab === 'friends' && (

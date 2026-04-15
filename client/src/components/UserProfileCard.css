@@ -12,6 +12,27 @@
     justify-content: center;
     z-index: 3000;
     animation: fadeIn 0.3s ease-out;
+    -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 768px) {
+    .user-profile-overlay {
+        background: rgba(0, 0, 0, 0.8) !important;
+        backdrop-filter: blur(15px) !important;
+    }
+
+    .user-profile-card.popout {
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        width: 100% !important;
+        max-width: 360px !important;
+        margin: 10px !important;
+        transform: scale(1) !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
 }
 
 .user-profile-overlay.transparent {

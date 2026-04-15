@@ -23,6 +23,12 @@
   align-items: center;
 }
 
+.friends-tabs button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .mobile-nav-toggle {
   display: none;
 }
@@ -52,13 +58,44 @@
   }
 
   .friends-tabs button {
-    padding: 8px 12px;
+    padding: 10px;
     font-size: 11px;
     white-space: nowrap;
+    justify-content: center;
+    border-radius: 14px;
+  }
+
+  .tab-label {
+    display: none;
   }
 
   .friends-content {
-    padding: 16px;
+    padding: 12px;
+  }
+
+  .friend-item,
+  .request-item,
+  .search-result-item {
+    gap: 10px;
+    padding: 12px 15px;
+  }
+
+  .friend-actions,
+  .request-actions {
+    gap: 6px;
+  }
+
+  .add-button,
+  .accept-button,
+  .reject-button {
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+    min-width: auto !important;
+  }
+
+  .test-action-btn {
+    width: 34px;
+    height: 34px;
   }
 }
 
@@ -189,6 +226,9 @@
   letter-spacing: -0.5px;
   display: flex;
   align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .unread-count-badge {
@@ -213,6 +253,9 @@
 .result-email {
   font-size: 13px;
   color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .activity-status {

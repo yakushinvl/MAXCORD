@@ -16,6 +16,13 @@
         border-radius: 0;
         border: none;
         background: var(--bg-dark);
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .member-item {
+        cursor: pointer !important;
+        -webkit-user-select: none;
+        user-select: none;
     }
 }
 
@@ -47,6 +54,7 @@
     padding: 8px 10px;
     border-radius: 12px;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     gap: 12px;
     color: var(--text-muted);
