@@ -24,7 +24,7 @@ const Landing: React.FC = () => {
 
             <nav className="landing-nav">
                 <div className="nav-logo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-                    <img src={`${import.meta.env.BASE_URL}icon.png`} alt="MAXCORD" />
+                    <img src={`${import.meta.env.BASE_URL}logo-trans_256x256.png`} alt="MAXCORD" />
                     <span>MAXCORD</span>
                 </div>
                 <div className="nav-links">

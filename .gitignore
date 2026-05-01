@@ -1,13 +1,13 @@
-node_modules/
+node_modules
 .env
 .env.local
 .DS_Store
 dist/
-build/
-uploads/
+build
+uploads
 *.log
-.vscode/
-.idea/
+.vscode
+.idea
 
 .gitignore
 
@@ -19,3 +19,5 @@ server/.env.example
 server/create-test-user.md
 
 client/.env.example
+
+bot-example

@@ -24,10 +24,14 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    font-size: 24px;
+    font-weight: 800;
+    color: #fff;
     cursor: pointer;
 }
 
 .nav-logo img {
+    width: 32px;
     height: 32px;
 }
 

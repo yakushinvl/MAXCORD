@@ -842,28 +842,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             </div>
 
             <div className="settings-section-block">
-              <h3>Иконка приложения</h3>
-              <div className="app-icon-grid">
-                {[
-                  { id: 'default', label: 'Стандарт', img: 'icon.png' },
-                  { id: 'icon1', label: 'Неон', img: 'icon1.PNG' },
-                  { id: 'icon2', label: 'Лазурь', img: 'icon2.png' },
-                  { id: 'icon3', label: 'Аметист', img: 'icon3.png' },
-                  { id: 'icon4', label: 'Космос', img: 'icon4.png' }
-                ].map(icon => (
-                  <div
-                    key={icon.id}
-                    className={`app-icon-option ${appIcon === icon.id ? 'active' : ''}`}
-                    onClick={() => setAppIcon(icon.id as any)}
-                  >
-                    <img src={(window as any).electron ? icon.img : '/' + icon.img} alt={icon.label} />
-                    <span>{icon.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="settings-section-block">
               <h3>Кастомный стиль (Бета)</h3>
               <p style={{ color: 'var(--text-dim)', fontSize: '13px', marginBottom: '20px' }}>
                 Настройте основные цвета и фон приложения. Эти настройки сохраняются только для вас.
