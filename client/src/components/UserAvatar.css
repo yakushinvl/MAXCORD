@@ -1,0 +1,88 @@
+.user-avatar-container {
+    position: relative;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.user-avatar-container img,
+.user-avatar-container canvas {
+    border-radius: inherit;
+}
+
+.user-avatar-container:hover {
+    transform: scale(1.05);
+}
+
+.avatar-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-img.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.avatar-img.visible {
+    opacity: 1;
+}
+
+.avatar-static-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-static-canvas.hidden {
+    opacity: 0;
+}
+
+.avatar-static-canvas.visible {
+    opacity: 1;
+}
+
+.avatar-placeholder {
+    border-radius: inherit;
+    background: linear-gradient(135deg, #444, #222);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    flex-shrink: 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.avatar-loading-placeholder {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: inherit;
+    animation: avatar-pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes avatar-pulse {
+    0% {
+        opacity: 0.3;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+
+    100% {
+        opacity: 0.3;
+    }
+}

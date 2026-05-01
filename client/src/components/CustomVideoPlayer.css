@@ -1,0 +1,191 @@
+.custom-video-player {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    /* Default limit, overrideable */
+    background: #000;
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    aspect-ratio: 16 / 9;
+    user-select: none;
+}
+
+.video-element {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    cursor: pointer;
+}
+
+.play-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 64px;
+    height: 64px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    transition: all 0.2s;
+}
+
+.play-overlay svg {
+    margin-left: 5px;
+    /* Optical centering for the play triangle */
+}
+
+.custom-video-player:hover .play-overlay {
+    background: rgba(0, 0, 0, 0.8);
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+.video-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+    padding: 10px;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.video-controls.visible {
+    opacity: 1;
+}
+
+.seek-bar-container {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    position: relative;
+    cursor: pointer;
+}
+
+.seek-bar {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: 0;
+    outline: none;
+    cursor: pointer;
+}
+
+/* Track filling logic handled via JS backgroundSize or custom impl. 
+   Here we use a trick with background-image on the input for simple styling */
+.seek-bar {
+    background-image: linear-gradient(#5865F2, #5865F2);
+    background-repeat: no-repeat;
+    /* size set in JS */
+}
+
+.seek-bar::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 12px;
+    width: 12px;
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+    opacity: 1;
+    /* Always visible for user clarity */
+}
+
+.controls-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.controls-left,
+.controls-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.control-btn {
+    background: none;
+    border: none;
+    color: #bcbec0;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.1s;
+}
+
+.control-btn:hover {
+    color: #fff;
+}
+
+.time-display {
+    color: #fff;
+    font-size: 12px;
+    font-family: monospace;
+    margin-left: 4px;
+}
+
+.volume-control {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+    width: 100px;
+}
+
+.volume-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 60px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    outline: none;
+    background-image: linear-gradient(#fff, #fff);
+    background-repeat: no-repeat;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 10px;
+    width: 10px;
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+}
+
+/* Fullscreen overrides */
+.custom-video-player:fullscreen {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    aspect-ratio: auto;
+    background: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.custom-video-player:fullscreen .video-element {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}

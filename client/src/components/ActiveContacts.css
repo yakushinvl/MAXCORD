@@ -1,0 +1,272 @@
+.active-contacts-sidebar {
+    width: 340px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 20px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--corner-radius);
+    flex-shrink: 0;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.active-contacts-sidebar.empty {
+    /* Removed opacity: 0.7 to keep border brightness consistent */
+}
+
+.section-title {
+    font-size: 14px;
+    font-weight: 900;
+    color: white;
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    opacity: 0.6; /* Matches the 'muted' feel of secondary headers */
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    padding-left: 4px;
+}
+
+.active-contacts-list {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 8px;
+    padding-top: 10px; /* More room for hover effect */
+    padding-bottom: 30px;
+    margin-top: -10px; /* Offset the padding to keep alignment */
+}
+
+.active-card {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 20px;
+    padding: 14px;
+    margin-bottom: 15px;
+    cursor: pointer;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    backdrop-filter: blur(12px);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 
+        0 4px 15px rgba(0, 0, 0, 0.1),
+        inset 0 1px 1px rgba(255, 255, 255, 0.05);
+}
+
+.active-card[data-type="playing"] {
+    /* Dynamics are now handled by .active-card-glow */
+}
+
+.active-card[data-type="streaming"] {
+    /* Dynamics are now handled by .active-card-glow */
+}
+
+.active-card-glow {
+    position: absolute;
+    left: -30px;
+    top: 0;
+    bottom: 0;
+    width: 60px;
+    background-size: cover;
+    background-position: center;
+    filter: blur(25px) saturate(180%) brightness(1.2);
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+    transition: all 0.4s ease;
+}
+
+.active-card:hover .active-card-glow {
+    opacity: 0.6;
+    left: -20px;
+    filter: blur(20px) saturate(220%) brightness(1.4);
+}
+
+.active-card::after {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+}
+
+.active-card:hover::after {
+    opacity: 1;
+}
+
+.active-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.active-user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.active-avatar {
+    border-radius: 10px !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.active-user-details {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.active-username {
+    font-size: 15px;
+    font-weight: 800;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.2px;
+}
+
+.active-activity-name {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.active-game-mini-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+}
+
+.active-game-mini-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.active-game-info {
+    display: flex;
+    gap: 14px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 
+        inset 0 2px 6px rgba(0, 0, 0, 0.2),
+        0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.4s ease;
+}
+
+.active-card:hover .active-game-info {
+    background: rgba(0, 0, 0, 0.45);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1.02);
+}
+
+.active-game-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+}
+
+.active-game-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.active-game-details {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+}
+
+.active-game-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.1px;
+}
+
+.active-game-subtitle {
+    font-size: 11px;
+    color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.empty-active-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    margin: 10px 0;
+}
+
+.empty-active-icon {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle, rgba(0, 106, 255, 0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    margin-bottom: 20px;
+    color: var(--text-dim);
+    animation: pulseGlow 4s infinite ease-in-out;
+}
+
+.empty-active-icon svg {
+    opacity: 0.5;
+}
+
+.empty-active-state h4 {
+    color: white;
+    font-size: 16px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    letter-spacing: 0.5px;
+}
+
+.empty-active-state p {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    max-width: 220px;
+}
+
+@keyframes pulseGlow {
+    0%, 100% { transform: scale(1); opacity: 0.8; filter: drop-shadow(0 0 10px rgba(0, 106, 255, 0)); }
+    50% { transform: scale(1.05); opacity: 1; filter: drop-shadow(0 0 20px rgba(0, 106, 255, 0.2)); }
+}
+
+@media (max-width: 1100px) {
+    .active-contacts-sidebar {
+        display: none;
+    }
+}

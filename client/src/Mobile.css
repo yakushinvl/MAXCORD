@@ -1,0 +1,165 @@
+@media screen and (max-width: 768px) {
+  /* Global */
+  body {
+    overflow-x: hidden;
+    position: fixed; /* Prevent bouncy scrolling on iOS */
+    width: 100%;
+    height: 100%;
+  }
+
+  .main-container {
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    gap: 0 !important;
+  }
+
+  .back-button {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 12px !important;
+    color: white !important;
+    cursor: pointer !important;
+  }
+
+  /* Sidebars */
+  .sidebar {
+    width: 72px !important;
+    min-width: 72px !important;
+    border-radius: 0 !important;
+    border-right: 1px solid var(--glass-border);
+  }
+
+  .secondary-sidebar-container {
+    width: calc(100% - 72px) !important;
+    border-radius: 0 !important;
+  }
+
+  .sidebar-resizer {
+    display: none !important;
+  }
+
+  /* Content */
+  .main-content-area {
+    width: 100%;
+    border-radius: 0 !important;
+    margin: 0 !important;
+  }
+
+  .channel-view, .dm-view-container {
+    border-radius: 0 !important;
+    border: none !important;
+  }
+
+  .channel-header {
+    height: 56px !important;
+    padding: 0 12px !important;
+  }
+
+  .message-input-container {
+    padding: 0 8px 8px !important;
+  }
+
+  .message-form {
+    padding: 8px 12px !important;
+    gap: 8px !important;
+    border-radius: 12px !important;
+  }
+
+  .send-button {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+  }
+
+  .attachment-button {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  /* Messages */
+  .message {
+    padding: 8px 12px !important;
+  }
+
+  .message-author-avatar-wrap {
+    margin-right: 10px !important;
+  }
+
+  .message-author-avatar {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  /* Overlays */
+  .server-members {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    z-index: 2000 !important;
+    background: var(--bg-primary) !important;
+  }
+
+  /* Friends Panel */
+  .friends-container {
+    padding: 10px !important;
+  }
+  
+  .friends-header {
+    height: 56px !important;
+    padding: 0 12px !important;
+  }
+
+  .friends-mobile-header {
+    height: 56px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid var(--glass-border);
+    gap: 12px;
+  }
+
+  .friends-mobile-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: white;
+  }
+
+  .friends-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    border-radius: 0 !important;
+  }
+
+  .friends-content {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  /* Voice View */
+  .voice-hdr {
+    height: 56px !important;
+    padding: 0 12px !important;
+  }
+
+  .voice-canvas {
+    padding-bottom: 80px !important; /* Make room for floating controls */
+  }
+
+  .voice-ctrls {
+    scale: 0.9;
+    bottom: 20px !important;
+  }
+}

@@ -1,0 +1,155 @@
+.cropper-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    backdrop-filter: blur(4px);
+}
+
+.cropper-container {
+    background: #36393f;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 160px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    animation: cropper-fade-in 0.2s ease-out;
+}
+
+@keyframes cropper-fade-in {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.cropper-header {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cropper-header h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.cropper-close {
+    background: transparent;
+    border: none;
+    color: #b9bbbe;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    transition: color 0.2s;
+}
+
+.cropper-close:hover {
+    color: #fff;
+}
+
+.cropper-content {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.cropper-wrapper {
+    position: relative;
+    width: 100%;
+    height: 350px;
+    background: #202225;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.cropper-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.zoom-control {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    color: #b9bbbe;
+    font-size: 14px;
+}
+
+.zoom-range {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #202225;
+    height: 6px;
+    border-radius: 3px;
+    outline: none;
+}
+
+.zoom-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.cropper-footer {
+    padding: 16px 20px;
+    background: #2f3136;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.cropper-btn-cancel {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 8px 16px;
+}
+
+.cropper-btn-cancel:hover {
+    text-decoration: underline;
+}
+
+.cropper-btn-save {
+    background: #5865f2;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 24px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.cropper-btn-save:hover {
+    background: #4752c4;
+}

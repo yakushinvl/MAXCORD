@@ -1,0 +1,102 @@
+{
+  "name": "maxcord-client",
+  "version": "1.5.31",
+  "private": true,
+  "author": "yakushinvl",
+  "description": "MAXCORD - Real-time communication platform",
+  "dependencies": {
+    "axios": "^1.6.2",
+    "electron-is-dev": "^2.0.0",
+    "electron-log": "^5.4.3",
+    "electron-updater": "^6.6.2",
+    "maxcord-native-audio": "file:./native-audio"
+  },
+  "main": "public/electron.js",
+  "homepage": "./",
+  "build": {
+    "appId": "com.maxcord.app",
+    "productName": "MAXCORD",
+    "win": {
+      "target": "nsis",
+      "icon": "public/icon.ico",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "files": [
+      "build/**/*"
+    ],
+    "directories": {
+      "buildResources": "public",
+      "output": "dist"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "yakushinvl",
+        "repo": "MAXCORD",
+        "releaseType": "release"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yakushinvl/MAXCORD.git"
+  },
+  "scripts": {
+    "dev": "vite",
+    "start": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron:build": "cross-env VITE_ELECTRON=true npm run build && node -e \"const fs=require('fs'); fs.cpSync('public', 'build', {recursive: true, force: true})\" && electron-builder -w -c.extraMetadata.main=build/electron.js -c.compression=store"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@sapphi-red/web-noise-suppressor": "^0.3.5",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "@types/jest": "^27.5.2",
+    "@types/node": "^20.19.0",
+    "@types/react": "^18.2.42",
+    "@types/react-dom": "^18.2.17",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "@types/react-window": "^1.8.8",
+    "@vitejs/plugin-react": "^5.1.2",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^39.2.7",
+    "electron-builder": "^26.0.12",
+    "livekit-client": "^2.17.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-easy-crop": "^5.5.6",
+    "react-router-dom": "^7.12.0",
+    "react-window": "^2.2.5",
+    "socket.io-client": "^4.6.1",
+    "typescript": "^5.4.5",
+    "vite": "^7.3.0",
+    "vite-tsconfig-paths": "^6.0.3",
+    "wait-on": "^9.0.3",
+    "web-vitals": "^2.1.4",
+    "lucide-react": "^0.577.0",
+    "react-syntax-highlighter": "^16.1.1",
+    "tenorjs": "^1.0.10"
+  }
+}

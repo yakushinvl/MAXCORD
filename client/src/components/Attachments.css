@@ -1,0 +1,375 @@
+/* Attachments.css - Liquid Glass 2026 Redesign */
+
+.attachments-preview {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.attachments-preview-list {
+    display: flex;
+    gap: 16px;
+    padding: 16px 20px;
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    border: 1px solid var(--glass-border);
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.input-attachment-preview {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 1px solid var(--glass-border);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.input-attachment-preview:hover {
+    transform: translateY(-4px) scale(1.02);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(0, 229, 255, 0.3);
+    box-shadow: 0 8px 25px rgba(0, 229, 255, 0.15);
+}
+
+.input-attachment-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 14px;
+}
+
+.input-attachment-preview .file-icon {
+    color: var(--text-muted);
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.1));
+}
+
+.remove-attachment-btn {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    background: #ff3b30;
+    color: #fff;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(255, 59, 48, 0.4);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 10;
+}
+
+.remove-attachment-btn:hover {
+    background: #ff453a;
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 0 15px rgba(255, 59, 48, 0.6);
+}
+
+.attachments-preview-list::-webkit-scrollbar {
+    height: 6px;
+}
+
+.attachments-preview-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+/* Chat Message Attachments */
+.message-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.attachment-item {
+    position: relative;
+    max-width: 450px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s;
+}
+
+.attachment-item:hover {
+    transform: translateY(-2px);
+}
+
+.attachment-image-container,
+.attachment-video-wrapper {
+    position: relative;
+    line-height: 0;
+}
+
+.attachment-audio-container,
+.attachment-file-container {
+    position: relative;
+    line-height: normal;
+}
+
+.attachment-image {
+    max-width: 100%;
+    max-height: 400px;
+    border-radius: 16px;
+    object-fit: contain;
+    background: rgba(255, 255, 255, 0.03);
+    cursor: pointer;
+    border: 1px solid var(--glass-border);
+}
+
+.attachment-download-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    outline: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 5;
+    text-decoration: none;
+}
+
+.attachment-item:hover .attachment-download-btn {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.attachment-download-btn:hover {
+    background: var(--primary-neon);
+    color: black;
+    border-color: var(--primary-neon);
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+}
+
+.attachment-download-btn.audio,
+.attachment-download-btn.file {
+    position: static;
+    opacity: 1;
+    transform: none;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+.attachment-file {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--primary-neon);
+    text-decoration: none;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+    transition: all 0.2s;
+    font-weight: 500;
+    flex: 1;
+    min-width: 0;
+}
+
+.attachment-file span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.attachment-file:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(0, 229, 255, 0.3);
+}
+
+.attachment-file-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+/* --- SHARED EMBEDS --- */
+.message-embeds {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+    max-width: 520px;
+}
+
+.message-embed {
+    background: rgba(255, 255, 255, 0.03);
+    border-left: 4px solid var(--primary-neon);
+    border-radius: 4px 12px 12px 4px;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    animation: embedSlideIn 0.3s ease-out;
+    border: 1px solid var(--glass-border);
+    border-left-width: 4px;
+}
+
+@keyframes embedSlideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.embed-content-wrap {
+    flex: 1;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.embed-author {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.embed-author-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+}
+
+.embed-author-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-decoration: none;
+}
+
+.embed-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary-neon);
+    text-decoration: none;
+    margin: 2px 0;
+}
+
+.embed-title:hover {
+    text-decoration: underline;
+}
+
+.embed-description {
+    font-size: 13px;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    line-height: 1.4;
+    max-height: 150px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    line-clamp: 5;
+    -webkit-box-orient: vertical;
+}
+
+.embed-image {
+    margin-top: 8px;
+    max-width: 100%;
+    border-radius: 8px;
+    border: 1px solid var(--glass-border);
+    cursor: pointer;
+}
+
+.embed-thumbnail {
+    margin: 12px;
+    width: 80px;
+    height: 80px;
+    border-radius: 10px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.embed-footer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    opacity: 0.6;
+}
+
+.embed-footer-icon {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+}
+
+.embed-footer-text {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* --- INTERACTIVE BUTTONS --- */
+.message-interactive-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+    max-width: 520px;
+}
+
+.button-row {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+}
+
+.msg-button {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.msg-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+.msg-button.primary {
+    background: rgba(0, 229, 255, 0.1);
+    color: var(--primary-neon);
+    border-color: rgba(0, 229, 255, 0.3);
+}
+
+.msg-button.primary:hover {
+    background: var(--primary-neon);
+    color: black;
+}

@@ -1,0 +1,93 @@
+.sticky-pins-container {
+    padding: 8px 16px;
+    background: rgba(0, 229, 255, 0.03);
+    border-bottom: 1px solid var(--glass-border);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    backdrop-filter: blur(10px);
+    position: relative;
+    z-index: 5;
+}
+
+.sticky-pins-container:hover {
+    background: rgba(0, 229, 255, 0.06);
+}
+
+.sticky-pin-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sticky-pin-icon-wrap {
+    width: 24px;
+    height: 24px;
+    background: rgba(0, 229, 255, 0.1);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sticky-pin-media-preview {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 1px solid var(--glass-border);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.sticky-pin-media-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.video-placeholder-mini {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-neon);
+    background: rgba(0, 229, 255, 0.05);
+}
+
+.sticky-pin-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.sticky-pin-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--primary-neon);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sticky-pin-snippet {
+    font-size: 13px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sticky-pin-snippet strong {
+    color: white;
+}
+
+.sticky-pin-count {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-dim);
+}

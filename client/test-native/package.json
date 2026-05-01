@@ -1,0 +1,11 @@
+{
+    "name": "hello-addon",
+    "version": "1.0.0",
+    "gypfile": true,
+    "dependencies": {
+        "node-addon-api": "^8.0.0"
+    },
+    "devDependencies": {
+        "node-gyp": "^10.0.0"
+    }
+}

@@ -1,0 +1,53 @@
+.message-reactions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.reaction-pill {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 2px 6px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, transform 0.1s;
+    user-select: none;
+    gap: 4px;
+}
+
+.reaction-pill:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.reaction-pill:active {
+    transform: scale(0.95);
+}
+
+.reaction-pill.active {
+    background: rgba(0, 229, 255, 0.1);
+    border-color: var(--primary-neon);
+}
+
+.custom-emoji-reaction {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+}
+
+.emoji-reaction {
+    font-size: 14px;
+}
+
+.reaction-count {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-dim);
+}
+
+.reaction-pill.active .reaction-count {
+    color: var(--primary-neon);
+}

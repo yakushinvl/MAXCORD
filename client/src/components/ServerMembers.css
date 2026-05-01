@@ -1,0 +1,203 @@
+.server-members {
+    width: 240px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--corner-radius);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.members-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 12px 12px 12px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.member-group {
+    margin-bottom: 24px;
+}
+
+.group-header {
+    padding: 0 8px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+}
+
+.member-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    gap: 12px;
+    color: var(--text-muted);
+    margin: 2px 0;
+    border: 1px solid transparent;
+}
+
+.member-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+    transform: translateX(4px);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.member-avatar {
+    border-radius: 10px !important;
+    flex-shrink: 0;
+}
+
+.member-avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.status-indicator {
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    width: 12px;
+    height: 12px;
+    border-radius: 5px;
+    /* Tiny squircle */
+    border: 2px solid #1a1a1a;
+    background: #747f8d;
+    z-index: 10;
+}
+
+.status-indicator.online {
+    background: #43b581;
+}
+
+.status-indicator.away {
+    background: #faa61a;
+}
+
+.status-indicator.busy {
+    background: #f04747;
+}
+
+.member-name-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+    max-width: 100%;
+}
+
+.member-name {
+    font-size: 15px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.member-name-row .user-badges-container {
+    flex-shrink: 0;
+}
+
+.member-item:hover .member-name {
+    color: var(--text-primary);
+}
+
+.member-item.offline {
+    opacity: 0.5;
+}
+
+.member-item.offline:hover {
+    opacity: 1;
+}
+
+.member-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    gap: 1px;
+    flex: 1;
+    min-width: 0;
+}
+
+.member-activity {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 1px;
+}
+
+.member-activity-icon {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    object-fit: cover;
+}
+
+.activity-text {
+    opacity: 0.8;
+    font-weight: 500;
+}
+
+/* Mobile Server Members */
+@media screen and (max-width: 768px) {
+    .members-sidebar-wrapper.is-mobile {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        z-index: 1100;
+        background: var(--bg-main);
+        animation: slide-left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .server-members {
+        width: 100% !important;
+        border: none !important;
+        border-radius: 0 !important;
+        height: 100% !important;
+    }
+
+    .members-mobile-header {
+        height: 64px;
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        gap: 16px;
+        background: var(--bg-main);
+        flex-shrink: 0;
+    }
+
+    .members-mobile-header span {
+        font-weight: 800;
+        font-size: 16px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+}
+
+@keyframes slide-left {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}

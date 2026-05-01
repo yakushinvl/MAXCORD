@@ -1,0 +1,256 @@
+.voice-control-panel {
+    background: rgba(10, 10, 15, 0.85) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    border-top: 1px solid var(--glass-border) !important;
+    border-radius: 0 !important;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: auto;
+    z-index: 20;
+    box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.3);
+}
+
+.voice-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.voice-status-indicator {
+    position: relative;
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.voice-status-dot {
+    width: 8px;
+    height: 8px;
+    background: #23a559;
+    border-radius: 50%;
+    position: absolute;
+    box-shadow: 0 0 10px #23a559;
+    z-index: 2;
+}
+
+.voice-status-indicator.connecting .voice-status-dot {
+    background: #f29332;
+    box-shadow: 0 0 10px #f29332;
+}
+
+.voice-status-indicator.connecting .pulse-ring {
+    border-color: #f29332;
+}
+
+.pulse-ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid #23a559;
+    animation: voicePulse 2s infinite;
+    z-index: 1;
+}
+
+.voice-details {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+}
+
+.voice-connection-status {
+    font-size: 13px;
+    font-weight: 700;
+    color: #23a559;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.3s;
+}
+
+.voice-connection-status.connecting {
+    color: #f29332;
+}
+
+.voice-channel-name {
+    font-size: 11px;
+    color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.voice-channel-name.connecting {
+    color: #f29332;
+    animation: connectingPulse 1.5s infinite;
+}
+
+@keyframes connectingPulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.voice-disconnect-btn {
+    background: rgba(255, 77, 77, 0.1);
+    border: 1px solid rgba(255, 77, 77, 0.2);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.voice-disconnect-btn:hover {
+    background: #ff4d4d;
+    box-shadow: 0 0 15px rgba(255, 77, 77, 0.4);
+    transform: scale(1.05);
+}
+
+.voice-disconnect-btn:hover svg {
+    color: white !important;
+}
+
+.voice-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.voice-action-btn {
+    flex: 1;
+    height: 34px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    color: var(--text-muted);
+}
+
+.voice-action-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.voice-action-btn.active {
+    background: rgba(255, 77, 77, 0.1);
+    border-color: rgba(255, 77, 77, 0.3);
+}
+
+.voice-action-btn.sharing {
+    background: rgba(0, 229, 255, 0.1);
+    border-color: rgba(0, 229, 255, 0.3);
+    box-shadow: inset 0 0 10px rgba(0, 229, 255, 0.1);
+}
+
+.voice-action-btn.active:hover {
+    background: rgba(255, 77, 77, 0.2);
+}
+
+.voice-action-btn.sharing:hover {
+    background: rgba(0, 229, 255, 0.2);
+}
+
+/* Connection Tooltip */
+.voice-connection-tooltip {
+    position: absolute;
+    bottom: calc(100% + 20px);
+    left: -10px;
+    min-width: 180px;
+    padding: 12px;
+    z-index: 9999; /* Higher z-index */
+    pointer-events: none;
+    animation: tooltipFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: bottom left;
+    background: rgba(15, 15, 25, 0.98) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8) !important;
+}
+
+.voice-connection-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 15px;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid rgba(25, 25, 35, 0.95);
+}
+
+@keyframes tooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.tooltip-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tooltip-header span {
+    font-size: 11px;
+    font-weight: 800;
+    color: #8e9297;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tooltip-header .tooltip-header-dot {
+    width: 6px;
+    height: 6px;
+    background: #23a559;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #23a559;
+    flex-shrink: 0;
+}
+
+.tooltip-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tooltip-row .label {
+    font-size: 12px;
+    color: #b9bbbe;
+}
+
+.tooltip-row .value {
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+}
+
+.value.quality-excellent { color: #23a559 !important; }
+.value.quality-good { color: #f29332 !important; }
+.value.quality-poor { color: #ff4d4d !important; }
+.value.quality-lost { color: #747f8d !important; }
