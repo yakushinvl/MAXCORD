@@ -3,13 +3,15 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
 import { useVoice } from '../contexts/VoiceContext';
 import axios from 'axios';
-import { Server, Channel, Message, DirectMessage, User } from '../types';
+import { Server, Channel, Message, DirectMessage, User, MiniApp } from '../types';
 import Sidebar from '../components/Sidebar';
 import ServerSidebar from '../components/ServerSidebar';
 import ChannelView from '../components/ChannelView';
 import VoiceChannelView from '../components/VoiceChannelView';
 import ActiveVoiceOverlay from '../components/ActiveVoiceOverlay';
 import FriendsPanel from '../components/FriendsPanel';
+import ShowcaseView from '../components/ShowcaseView';
+import MiniAppContainer from '../components/MiniAppContainer';
 import DMView from '../components/DMView';
 import DMSidebar from '../components/DMSidebar';
 import VoiceCall from '../components/VoiceCall';
@@ -41,6 +43,8 @@ const Main: React.FC = () => {
   const [initialUnreadCount, setInitialUnreadCount] = useState(0);
   const [messages, setMessages] = useState<Message[]>([]);
   const [showFriends, setShowFriends] = useState(false);
+  const [showShowcase, setShowShowcase] = useState(false);
+  const [openMiniApps, setOpenMiniApps] = useState<MiniApp[]>([]);
   const [selectedDM, setSelectedDM] = useState<DirectMessage | null>(null);
   const [dmMessages, setDmMessages] = useState<Message[]>([]);
   const [dms, setDms] = useState<DirectMessage[]>([]);
@@ -579,6 +583,25 @@ const Main: React.FC = () => {
     if (selectedServer?._id === serverId) { setSelectedServer(null); setSelectedChannel(null); }
   };
 
+  const handleShowShowcase = () => {
+    setShowShowcase(true);
+    setShowFriends(false);
+    setSelectedServer(null);
+    setSelectedChannel(null);
+    setSelectedDM(null);
+    setMobileView('content');
+  };
+
+  const handleOpenMiniApp = (app: MiniApp) => {
+    if (!openMiniApps.find(a => a._id === app._id)) {
+      setOpenMiniApps([...openMiniApps, app]);
+    }
+  };
+
+  const handleCloseMiniApp = (appId: string) => {
+    setOpenMiniApps(openMiniApps.filter(a => a._id !== appId));
+  };
+
   const handleUserClick = (userId: string, event?: React.MouseEvent | CustomEvent) => {
     setShowProfileUserId(userId);
     if (event) {
@@ -609,7 +632,7 @@ const Main: React.FC = () => {
         <Sidebar
           user={user!} servers={servers} unreadCounts={unreadCounts} selectedServer={selectedServer}
           onServerSelect={(server) => {
-            setSelectedServer(server); setShowFriends(false); setSelectedDM(null);
+            setSelectedServer(server); setShowFriends(false); setShowShowcase(false); setSelectedDM(null);
             const firstTextChannel = server.channels.find(c => c.type === 'text');
             if (firstTextChannel) {
               setMessages([]);
@@ -621,7 +644,9 @@ const Main: React.FC = () => {
           }}
           onCreateServer={handleCreateServer}
           onServerJoined={(server) => { setServers((prev) => [...prev, server]); setSelectedServer(server); if (socket) socket.emit('join-server', server._id); if (server.channels.length > 0) setSelectedChannel(server.channels[0]); }}
-          onLogout={logout} onShowFriends={() => { setShowFriends(true); setSelectedServer(null); setSelectedChannel(null); setSelectedDM(null); setMobileView(isMobile ? 'content' : 'sidebar'); }}
+          onLogout={logout} onShowFriends={() => { setShowFriends(true); setShowShowcase(false); setSelectedServer(null); setSelectedChannel(null); setSelectedDM(null); setMobileView(isMobile ? 'content' : 'sidebar'); }}
+          onShowShowcase={handleShowShowcase}
+          showShowcase={showShowcase}
           onServerLeave={handleServerLeave}
           onOpenJoinModal={() => setShowJoinModal(true)}
           onOpenSettings={() => setShowSettingsModal(true)}
@@ -632,7 +657,7 @@ const Main: React.FC = () => {
       )}
 
       {/* --- SECOND SIDEBAR AREA --- */}
-      {selectedServer && !showFriends ? (
+      {selectedServer && !showFriends && !showShowcase ? (
         ((!isMobile || mobileView === 'sidebar')) && (
           <div className="secondary-sidebar-container" style={{ width: isMobile ? '100%' : sidebarWidth + 1 }}>
             <ServerSidebar
@@ -649,7 +674,7 @@ const Main: React.FC = () => {
             {!isMobile && <div className="sidebar-resizer" onMouseDown={startResizing} />}
           </div>
         )
-      ) : !selectedServer ? (
+      ) : !selectedServer && !showShowcase ? (
         ((!isMobile || mobileView === 'sidebar')) && (
           <div className="secondary-sidebar-container" style={{ width: isMobile ? '100%' : sidebarWidth + 1 }}>
             <DMSidebar
@@ -658,11 +683,13 @@ const Main: React.FC = () => {
               onDMSelect={(dm) => {
                 setSelectedDM(dm);
                 setShowFriends(false);
+                setShowShowcase(false);
                 setSelectedServer(null);
                 setMobileView('content');
               }}
               onShowFriends={() => {
                 setShowFriends(true);
+                setShowShowcase(false);
                 setSelectedDM(null);
                 setMobileView(isMobile ? 'content' : 'sidebar');
               }}
@@ -692,7 +719,15 @@ const Main: React.FC = () => {
             />
           )}
 
-          {selectedChannel && !showFriends && (!isMobile || mobileView === 'content') && (
+          {showShowcase && (
+            <ShowcaseView
+              onOpenMiniApp={handleOpenMiniApp}
+              onBack={() => setMobileView('sidebar')}
+              isMobile={isMobile}
+            />
+          )}
+
+          {selectedChannel && !showFriends && !showShowcase && (!isMobile || mobileView === 'content') && (
             selectedChannel.type === 'text' ? (
               <ChannelView
                 key={selectedChannel._id}
@@ -761,7 +796,7 @@ const Main: React.FC = () => {
             </div>
           )}
 
-          {!selectedChannel && !selectedDM && !showFriends && !selectedServer && (
+          {!selectedChannel && !selectedDM && !showFriends && !showShowcase && !selectedServer && (
             <div className="empty-view">
               <h2>Добро пожаловать в MAXCORD!</h2>
               <p>Выберите друга или сервер, чтобы начать общение</p>
@@ -875,6 +910,11 @@ const Main: React.FC = () => {
         </>
       )}
       <div id="voice-controls-portal" />
+
+      <MiniAppContainer
+        openApps={openMiniApps}
+        onClose={handleCloseMiniApp}
+      />
     </div>
   );
 };

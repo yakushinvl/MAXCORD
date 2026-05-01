@@ -373,34 +373,32 @@ function createWindow() {
         }
     );
 
-    // Final Strike: Robustly strip and replace protection headers
+    // Global Fix: Strip X-Frame-Options and Content-Security-Policy for ALL sites 
+    // to allow any website to be embedded in Mini-Apps.
     mainWindow.webContents.session.webRequest.onHeadersReceived(
-        { urls: ['*://*.youtube.com/*', '*://*.youtube-nocookie.com/*', '*://*.googlevideo.com/*'] },
+        { urls: ['*://*/*'] },
         (details, callback) => {
             const responseHeaders = {};
+            const headersToRemove = [
+                'x-frame-options',
+                'content-security-policy',
+                'frame-options',
+                'access-control-allow-origin',
+                'access-control-allow-headers',
+                'access-control-allow-methods',
+                'access-control-allow-credentials'
+            ];
             
-            // Filter out existing security and CORS headers to prevent duplicates
             Object.keys(details.responseHeaders).forEach(key => {
                 const lowerKey = key.toLowerCase();
-                if (![
-                    'x-frame-options', 
-                    'content-security-policy', 
-                    'frame-options', 
-                    'access-control-allow-origin',
-                    'access-control-allow-headers',
-                    'access-control-allow-methods',
-                    'access-control-allow-credentials'
-                ].includes(lowerKey)) {
+                if (!headersToRemove.includes(lowerKey)) {
                     responseHeaders[key] = details.responseHeaders[key];
                 }
             });
             
-            // Dynamic mirroring for CORS with Credentials support
             let requestOrigin = details.requestHeaders?.['Origin'] || details.requestHeaders?.['origin'];
-            
-            // Fallback for Electron file protocol (null origin)
             if (!requestOrigin || requestOrigin === 'null' || requestOrigin === 'file://') {
-                requestOrigin = 'https://www.youtube-nocookie.com';
+                requestOrigin = '*';
             }
             
             responseHeaders['Access-Control-Allow-Origin'] = [requestOrigin];

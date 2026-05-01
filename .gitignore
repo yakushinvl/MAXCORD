@@ -19,5 +19,6 @@ server/.env.example
 server/create-test-user.md
 
 client/.env.example
+client/.env.production
 
 bot-example

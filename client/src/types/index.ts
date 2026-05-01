@@ -28,6 +28,7 @@ export interface User {
   blockedUsers?: string[];
   notes?: Record<string, string>;
   isBot?: boolean;
+  isPublished?: boolean;
   badges?: string[];
   is2FAEnabled?: boolean;
   role?: 'user' | 'moderator' | 'admin';
@@ -39,6 +40,18 @@ export interface User {
     activityVisibility: 'everyone' | 'friends' | 'none';
     hiddenActivities: string[];
   };
+  createdAt: string;
+}
+
+export interface MiniApp {
+  _id: string;
+  name: string;
+  url: string;
+  owner: string | User;
+  isPublished: boolean;
+  avatar?: string;
+  banner?: string;
+  description?: string;
   createdAt: string;
 }
 

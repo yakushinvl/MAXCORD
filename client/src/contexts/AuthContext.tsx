@@ -31,7 +31,10 @@ export const useAuth = () => {
   return context;
 };
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://maxcord.fun';
+const API_URL = import.meta.env.VITE_API_URL || 
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'http://localhost:5000' 
+    : 'https://maxcord.fun');
 axios.defaults.baseURL = API_URL;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
