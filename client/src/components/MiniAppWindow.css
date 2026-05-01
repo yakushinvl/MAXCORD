@@ -1,0 +1,142 @@
+.miniapp-window {
+    position: fixed;
+    background: var(--bg-secondary);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 400px;
+    min-height: 300px;
+}
+
+.miniapp-header {
+    height: 40px;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    cursor: grab;
+    user-select: none;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.miniapp-header:active {
+    cursor: grabbing;
+}
+
+.header-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.header-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.header-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.header-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.header-btn:hover:last-child {
+    background: #ff453a;
+}
+
+.miniapp-content {
+    flex: 1;
+    background: white;
+}
+
+.miniapp-content iframe {
+    border: none;
+    width: 100%;
+    height: 100%;
+}
+
+.miniapp-loading {
+    position: absolute;
+    inset: 0;
+    background: var(--bg-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+}
+
+/* Reuse existing loader styles from Main.css if they exist, or define here */
+.loading-spinner-rings {
+    display: inline-block;
+    position: relative;
+    width: 40px;
+    height: 40px;
+}
+.loading-spinner-rings div {
+    box-sizing: border-box;
+    display: block;
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    margin: 4px;
+    border: 3px solid var(--primary-neon);
+    border-radius: 50%;
+    animation: loading-spinner-rings 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+    border-color: var(--primary-neon) transparent transparent transparent;
+}
+.loading-spinner-rings div:nth-child(1) { animation-delay: -0.45s; }
+.loading-spinner-rings div:nth-child(2) { animation-delay: -0.3s; }
+.loading-spinner-rings div:nth-child(3) { animation-delay: -0.15s; }
+@keyframes loading-spinner-rings {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Resize Handles */
+.resize-handle {
+    position: absolute;
+    z-index: 10;
+}
+
+.resize-handle.right {
+    top: 0;
+    right: 0;
+    width: 6px;
+    height: 100%;
+    cursor: e-resize;
+}
+
+.resize-handle.bottom {
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    cursor: s-resize;
+}
+
+.resize-handle.bottom-right {
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    cursor: se-resize;
+}

@@ -93,6 +93,10 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  isPublished: {
+    type: Boolean,
+    default: false
+  },
   botToken: {
     type: String,
     unique: true,

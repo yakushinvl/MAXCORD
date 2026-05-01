@@ -17,7 +17,10 @@ export const useSocket = () => {
   return context;
 };
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://maxcord.fun';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'http://localhost:5000' 
+    : 'https://maxcord.fun');
 const OVERLAY_DELAY = 60000; // 1 minute in ms
 
 export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

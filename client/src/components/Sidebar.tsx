@@ -4,7 +4,7 @@ import SettingsModal from './SettingsModal';
 import JoinServerModal from './JoinServerModal';
 import { getAvatarUrl } from '../utils/avatar';
 import UserAvatar from './UserAvatar';
-import { UsersIcon, PlusIcon, SettingsIcon, BellIcon } from './Icons';
+import { UsersIcon, PlusIcon, SettingsIcon, BellIcon, LayoutGridIcon } from './Icons';
 import ServerContextMenu from './ServerContextMenu';
 import './Sidebar.css';
 
@@ -18,6 +18,8 @@ interface SidebarProps {
   onServerJoined: (server: Server) => void;
   onLogout: () => void;
   onShowFriends: () => void;
+  onShowShowcase: () => void;
+  showShowcase?: boolean;
   onServerLeave: (serverId: string) => void;
   onOpenJoinModal: () => void;
   onOpenSettings: () => void;
@@ -36,6 +38,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onServerJoined,
   onLogout,
   onShowFriends,
+  onShowShowcase,
+  showShowcase,
   onServerLeave,
   onOpenJoinModal,
   onOpenSettings,
@@ -65,6 +69,9 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="server-icon inbox-sidebar-icon" onClick={onToggleInbox} title="Уведомления">
           <BellIcon size={28} color="var(--secondary-neon)" />
           {inboxUnreadCount > 0 && <div className="unread-badge">{inboxUnreadCount > 9 ? '9+' : inboxUnreadCount}</div>}
+        </div>
+        <div className={`server-icon home-icon ${showShowcase ? 'active' : ''}`} onClick={onShowShowcase} title="Витрина ботов и мини-приложений">
+          <LayoutGridIcon size={28} color="var(--primary-neon)" />
         </div>
         <div className="sidebar-divider" />
         {servers.map((server) => (

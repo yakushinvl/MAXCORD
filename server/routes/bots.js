@@ -44,8 +44,23 @@ router.post('/create', auth, async (req, res) => {
 // Get user's bots
 router.get('/my', auth, async (req, res) => {
     try {
-        const bots = await User.find({ owner: req.user._id, isBot: true }).select('username botToken createdAt bio avatar banner');
+        const bots = await User.find({ owner: req.user._id, isBot: true }).select('username botToken createdAt bio avatar banner isPublished');
         res.json(bots);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Toggle bot publish status
+router.patch('/:id/publish', auth, async (req, res) => {
+    try {
+        const bot = await User.findOne({ _id: req.params.id, owner: req.user._id, isBot: true });
+        if (!bot) return res.status(404).json({ message: 'Bot not found' });
+
+        bot.isPublished = !bot.isPublished;
+        await bot.save();
+
+        res.json({ message: bot.isPublished ? 'Бот опубликован на витрине' : 'Бот снят с витрины', isPublished: bot.isPublished });
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
     }

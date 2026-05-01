@@ -50,6 +50,8 @@ app.use('/api/direct-messages', require('./routes/directMessages'));
 app.use('/api/groups', require('./routes/groups'));
 app.use('/api/invites', require('./routes/invites'));
 app.use('/api/bots', require('./routes/bots'));
+app.use('/api/miniapps', require('./routes/miniapps'));
+app.use('/api/showcase', require('./routes/showcase'));
 app.use('/api/webhooks', require('./routes/webhooks'));
 app.use('/api/upload-files', require('./routes/uploads'));
 app.use('/api/livekit', require('./routes/livekit'));
