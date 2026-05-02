@@ -14,6 +14,7 @@ const MiniAppWindow: React.FC<MiniAppWindowProps> = ({ app, onClose }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [isResizing, setIsResizing] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isBlocked, setIsBlocked] = useState(false);
     const dragStartRef = useRef({ x: 0, y: 0 });
     const resizeStartRef = useRef({ x: 0, y: 0, w: 0, h: 0 });
 
@@ -25,6 +26,16 @@ const MiniAppWindow: React.FC<MiniAppWindowProps> = ({ app, onClose }) => {
     };
 
     const absoluteUrl = getAbsoluteUrl(app.url);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (isLoading) {
+                setIsBlocked(true);
+            }
+        }, 7000); // 7 seconds threshold for blocking detection
+        
+        return () => clearTimeout(timer);
+    }, [isLoading]);
 
     const handleMouseDown = (e: React.MouseEvent) => {
         setIsDragging(true);
@@ -85,11 +96,17 @@ const MiniAppWindow: React.FC<MiniAppWindowProps> = ({ app, onClose }) => {
     }, [isDragging, isResizing, handleMouseMove, handleMouseUp]);
 
     useEffect(() => {
+        if (!isLoading) {
+            setIsBlocked(false);
+            return;
+        }
+
         const timer = setTimeout(() => {
             if (isLoading) {
-                // Keep loading but show a hint that it might be blocked
+                setIsBlocked(true);
             }
-        }, 5000);
+        }, 7000);
+        
         return () => clearTimeout(timer);
     }, [isLoading]);
 
@@ -126,13 +143,21 @@ const MiniAppWindow: React.FC<MiniAppWindowProps> = ({ app, onClose }) => {
                 </div>
             </div>
             <div className="miniapp-content" style={{ position: 'relative' }}>
-                {isLoading && (
+                {isBlocked && (
+                    <div className="miniapp-blocked-overlay">
+                        <div className="blocked-content">
+                            <MonitorIcon size={64} color="var(--text-dim)" />
+                            <h3>Сайт не загружается?</h3>
+                            <p>Многие современные сайты (Google, GitHub и др.) запрещают встраивание во фреймы в целях безопасности.</p>
+                            <a href={absoluteUrl} target="_blank" rel="noopener noreferrer" className="neon-btn" style={{ padding: '12px 24px', fontSize: '13px' }}>
+                                Открыть в новой вкладке
+                            </a>
+                        </div>
+                    </div>
+                )}
+                {isLoading && !isBlocked && (
                     <div className="miniapp-loading">
                         <div className="loading-spinner-rings"><div></div><div></div><div></div><div></div></div>
-                        <div className="loading-hint" style={{ marginTop: '60px', textAlign: 'center', padding: '0 20px', color: 'var(--text-dim)', fontSize: '13px' }}>
-                            Если сайт долго не загружается, возможно, он запрещает встраивание. <br/>
-                            Попробуйте открыть его в новой вкладке через кнопку сверху.
-                        </div>
                     </div>
                 )}
                 <iframe 
@@ -141,9 +166,16 @@ const MiniAppWindow: React.FC<MiniAppWindowProps> = ({ app, onClose }) => {
                     width="100%"
                     height="100%"
                     frameBorder="0"
-                    onLoad={() => setIsLoading(false)}
+                    onLoad={() => {
+                        setIsLoading(false);
+                        setIsBlocked(false);
+                    }}
                     allow="geolocation; microphone; camera; midi; vr; accelerometer; gyroscope; payment; ambient-light-sensor; encrypted-media; usb"
-                    style={{ pointerEvents: isDragging || isResizing ? 'none' : 'auto', background: 'white' }}
+                    style={{ 
+                        pointerEvents: isDragging || isResizing ? 'none' : 'auto', 
+                        background: 'white',
+                        display: isBlocked ? 'none' : 'block'
+                    }}
                 />
             </div>
             {/* Resize Handles */}

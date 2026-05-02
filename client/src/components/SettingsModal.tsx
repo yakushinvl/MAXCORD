@@ -383,7 +383,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             Изменить баннер
           </button>
           <div className="account-avatar-wrapper" onClick={() => fileInputRef.current?.click()}>
-            <img src={avatarPreview || ''} alt="" />
+            {avatarPreview ? (
+              <img src={avatarPreview} alt="" />
+            ) : (
+              <div className="avatar-placeholder">{user?.username?.[0]?.toUpperCase()}</div>
+            )}
+            <div className="avatar-overlay">
+              <PlusIcon size={32} color="white" />
+            </div>
           </div>
         </div>
 
@@ -2301,7 +2308,14 @@ function BotsSettings() {
                         <input type="file" accept="image/*" onChange={handleBannerSelect} hidden />
                       </label>
                       <label className="account-avatar-wrapper" style={{ cursor: 'pointer', width: '70px', height: '70px', left: '20px', bottom: '-35px' }}>
-                        {previewAvatar ? <img src={previewAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <BotIcon size={32} color="black" />}
+                        {previewAvatar ? (
+                          <img src={previewAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <div className="avatar-placeholder" style={{ fontSize: '24px' }}>{editName?.[0]?.toUpperCase() || '?'}</div>
+                        )}
+                        <div className="avatar-overlay">
+                          <PlusIcon size={24} color="white" />
+                        </div>
                         <input type="file" accept="image/*" onChange={handleAvatarSelect} hidden />
                       </label>
                     </div>
@@ -2515,7 +2529,14 @@ function MiniAppsSettings() {
                         <input type="file" accept="image/*" onChange={handleBannerSelect} hidden />
                       </label>
                       <label className="account-avatar-wrapper" style={{ cursor: 'pointer', width: '70px', height: '70px', left: '20px', bottom: '-35px' }}>
-                        {previewAvatar ? <img src={previewAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <LayoutGridIcon size={32} color="black" />}
+                        {previewAvatar ? (
+                          <img src={previewAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <div className="avatar-placeholder" style={{ fontSize: '24px' }}>{editName?.[0]?.toUpperCase() || '?'}</div>
+                        )}
+                        <div className="avatar-overlay">
+                          <PlusIcon size={24} color="white" />
+                        </div>
                         <input type="file" accept="image/*" onChange={handleAvatarSelect} hidden />
                       </label>
                     </div>

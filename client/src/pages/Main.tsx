@@ -645,6 +645,7 @@ const Main: React.FC = () => {
           onCreateServer={handleCreateServer}
           onServerJoined={(server) => { setServers((prev) => [...prev, server]); setSelectedServer(server); if (socket) socket.emit('join-server', server._id); if (server.channels.length > 0) setSelectedChannel(server.channels[0]); }}
           onLogout={logout} onShowFriends={() => { setShowFriends(true); setShowShowcase(false); setSelectedServer(null); setSelectedChannel(null); setSelectedDM(null); setMobileView(isMobile ? 'content' : 'sidebar'); }}
+          showFriends={showFriends}
           onShowShowcase={handleShowShowcase}
           showShowcase={showShowcase}
           onServerLeave={handleServerLeave}

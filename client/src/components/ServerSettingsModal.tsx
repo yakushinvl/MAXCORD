@@ -441,7 +441,14 @@ const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
                                 <div className="overview-grid">
                                     <div className="avatar-upload-section">
                                         <div className="server-avatar-preview" onClick={() => fileInputRef.current?.click()}>
-                                            {getAvatarUrl(serverIcon) ? <img src={getAvatarUrl(serverIcon)!} alt="" /> : <span>{serverName ? serverName.charAt(0).toUpperCase() : '?'}</span>}
+                                            {getAvatarUrl(serverIcon) ? (
+                                                <img src={getAvatarUrl(serverIcon)!} alt="" />
+                                            ) : (
+                                                <div className="avatar-placeholder">{serverName ? serverName.charAt(0).toUpperCase() : '?'}</div>
+                                            )}
+                                            <div className="avatar-overlay">
+                                                <PlusIcon size={32} color="white" />
+                                            </div>
                                         </div>
                                         <div className="avatar-hint">СМЕНИТЬ ИКОНКУ</div>
                                         <input type="file" ref={fileInputRef} onChange={handleIconUpload} style={{ display: 'none' }} accept="image/*" />

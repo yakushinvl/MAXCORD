@@ -74,6 +74,40 @@
     height: 100%;
 }
 
+.miniapp-blocked-overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--bg-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    padding: 40px;
+    text-align: center;
+}
+
+.blocked-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    max-width: 400px;
+}
+
+.blocked-content h3 {
+    color: white;
+    margin: 0;
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.blocked-content p {
+    color: var(--text-dim);
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0;
+}
+
 .miniapp-loading {
     position: absolute;
     inset: 0;

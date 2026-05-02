@@ -18,6 +18,7 @@ interface SidebarProps {
   onServerJoined: (server: Server) => void;
   onLogout: () => void;
   onShowFriends: () => void;
+  showFriends?: boolean;
   onShowShowcase: () => void;
   showShowcase?: boolean;
   onServerLeave: (serverId: string) => void;
@@ -38,6 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onServerJoined,
   onLogout,
   onShowFriends,
+  showFriends,
   onShowShowcase,
   showShowcase,
   onServerLeave,
@@ -57,21 +59,21 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <div className="sidebar">
       <div className="sidebar-servers">
-        <div className={`server-icon home-icon ${!selectedServer ? 'active' : ''}`} onClick={onShowFriends} title="Друзья">
+        <div className="server-icon inbox-sidebar-icon" onClick={onToggleInbox} title="Уведомления">
+          <BellIcon size={28} color="var(--secondary-neon)" />
+          {inboxUnreadCount > 0 && <div className="unread-badge">{inboxUnreadCount > 9 ? '9+' : inboxUnreadCount}</div>}
+        </div>
+        <div className={`server-icon home-icon ${showFriends && !selectedServer ? 'active' : ''}`} onClick={onShowFriends} title="Друзья">
           <UsersIcon size={28} />
           {Object.entries(unreadCounts).some(([id, count]) => count > 0 && !servers.some(s => s.channels.some(c => c._id === id))) && (
             <div className="unread-badge"></div>
           )}
         </div>
+        <div className={`server-icon home-icon ${showShowcase ? 'active' : ''}`} onClick={onShowShowcase} title="Витрина ботов и мини-приложений">
+          <LayoutGridIcon size={28} />
+        </div>
         <div className="server-icon home-icon" onClick={onOpenJoinModal} title="Добавить сервер">
           <PlusIcon size={28} color="var(--primary-neon)" />
-        </div>
-        <div className="server-icon inbox-sidebar-icon" onClick={onToggleInbox} title="Уведомления">
-          <BellIcon size={28} color="var(--secondary-neon)" />
-          {inboxUnreadCount > 0 && <div className="unread-badge">{inboxUnreadCount > 9 ? '9+' : inboxUnreadCount}</div>}
-        </div>
-        <div className={`server-icon home-icon ${showShowcase ? 'active' : ''}`} onClick={onShowShowcase} title="Витрина ботов и мини-приложений">
-          <LayoutGridIcon size={28} color="var(--primary-neon)" />
         </div>
         <div className="sidebar-divider" />
         {servers.map((server) => (
