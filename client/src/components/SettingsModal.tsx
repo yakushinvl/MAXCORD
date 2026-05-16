@@ -2096,6 +2096,19 @@ function BotsSettings() {
     }
   };
 
+  const resetBanner = async () => {
+    if (!editingBot || !editingBot.banner) return;
+    if (!(await confirm('Вы уверены, что хотите сбросить баннер?'))) return;
+    try {
+      await axios.delete(`/api/bots/${editingBot._id}/banner`);
+      setPreviewBanner(null);
+      setEditingBot({ ...editingBot, banner: null });
+      fetchBots();
+    } catch (e) {
+      await alert('Ошибка при сбросе баннера');
+    }
+  };
+
   const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -2307,6 +2320,15 @@ function BotsSettings() {
                         Изменить баннер
                         <input type="file" accept="image/*" onChange={handleBannerSelect} hidden />
                       </label>
+                      {previewBanner && (
+                        <button 
+                          className="change-banner-button" 
+                          style={{ right: '145px', background: 'rgba(255, 59, 48, 0.6)', cursor: 'pointer' }}
+                          onClick={resetBanner}
+                        >
+                          Сбросить
+                        </button>
+                      )}
                       <label className="account-avatar-wrapper" style={{ cursor: 'pointer', width: '70px', height: '70px', left: '20px', bottom: '-35px' }}>
                         {previewAvatar ? (
                           <img src={previewAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -2423,6 +2445,19 @@ function MiniAppsSettings() {
     }
   };
 
+  const resetBanner = async () => {
+    if (!editingApp || !editingApp.banner) return;
+    if (!(await confirm('Вы уверены, что хотите сбросить баннер?'))) return;
+    try {
+      await axios.delete(`/api/miniapps/${editingApp._id}/banner`);
+      setPreviewBanner(null);
+      setEditingApp({ ...editingApp, banner: null });
+      fetchApps();
+    } catch (e) {
+      await alert('Ошибка при сбросе баннера');
+    }
+  };
+
   const togglePublish = async (id: string) => {
     try {
       const res = await axios.patch(`/api/miniapps/${id}/publish`);
@@ -2528,6 +2563,15 @@ function MiniAppsSettings() {
                         Изменить баннер
                         <input type="file" accept="image/*" onChange={handleBannerSelect} hidden />
                       </label>
+                      {previewBanner && (
+                        <button 
+                          className="change-banner-button" 
+                          style={{ right: '145px', background: 'rgba(255, 59, 48, 0.6)', cursor: 'pointer' }}
+                          onClick={resetBanner}
+                        >
+                          Сбросить
+                        </button>
+                      )}
                       <label className="account-avatar-wrapper" style={{ cursor: 'pointer', width: '70px', height: '70px', left: '20px', bottom: '-35px' }}>
                         {previewAvatar ? (
                           <img src={previewAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

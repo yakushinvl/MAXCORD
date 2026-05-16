@@ -129,4 +129,19 @@ router.post('/:id/banner', auth, (req, res, next) => {
     }
 });
 
+// Reset mini-app banner
+router.delete('/:id/banner', auth, async (req, res) => {
+    try {
+        const miniApp = await MiniApp.findOne({ _id: req.params.id, owner: req.user._id });
+        if (!miniApp) return res.status(404).json({ message: 'MiniApp not found' });
+
+        miniApp.banner = null;
+        await miniApp.save();
+
+        res.json({ message: 'Баннер сброшен' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 module.exports = router;

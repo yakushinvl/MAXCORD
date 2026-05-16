@@ -217,4 +217,24 @@ router.post('/:id/banner', auth, (req, res, next) => {
     }
 });
 
+// Reset bot banner
+router.delete('/:id/banner', auth, async (req, res) => {
+    try {
+        const bot = await User.findOne({ _id: req.params.id, owner: req.user._id, isBot: true });
+        if (!bot) return res.status(404).json({ message: 'Bot not found' });
+
+        bot.banner = null;
+        await bot.save();
+
+        const io = req.app.get('io');
+        if (io) {
+            io.emit('user-updated', { _id: bot._id, banner: null });
+        }
+
+        res.json({ message: 'Баннер сброшен' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 module.exports = router;

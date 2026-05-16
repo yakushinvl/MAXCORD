@@ -4,6 +4,7 @@ import { getFullUrl } from '../utils/avatar';
 import { BotIcon, LayoutGridIcon, PlusIcon, SearchIcon, MonitorIcon } from './Icons';
 import { useDialog } from '../contexts/DialogContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useSocket } from '../contexts/SocketContext';
 import { User } from '../types';
 import ActiveContacts from './ActiveContacts';
 import './ShowcaseView.css';
@@ -18,6 +19,7 @@ interface ShowcaseViewProps {
 
 const ShowcaseView: React.FC<ShowcaseViewProps> = ({ onOpenMiniApp, onBack, isMobile, friends = [], onUserClick = () => {} }) => {
     const { user: currentUser } = useAuth();
+    const { socket } = useSocket();
     const [activeTab, setActiveTab] = useState<'all' | 'bots' | 'miniapps'>('all');
     const [showcaseData, setShowcaseData] = useState<{ bots: any[], miniApps: any[] }>({ bots: [], miniApps: [] });
     const [loading, setLoading] = useState(true);
@@ -52,6 +54,26 @@ const ShowcaseView: React.FC<ShowcaseViewProps> = ({ onOpenMiniApp, onBack, isMo
         } catch (e: any) {
             await alert(e.response?.data?.message || 'Ошибка при добавлении бота');
         }
+    };
+
+    const handleOpenApp = (app: any) => {
+        // Update user activity status via socket
+        if (socket) {
+            socket.emit('activity-update', {
+                name: app.name,
+                type: 'playing',
+                state: 'В приложении',
+                details: app.description ? app.description.slice(0, 100) : '',
+                assets: {
+                    largeImage: app.avatar || null,
+                    largeText: app.name
+                },
+                timestamps: {
+                    start: Date.now()
+                }
+            });
+        }
+        onOpenMiniApp(app);
     };
 
     const filteredBots = showcaseData.bots.filter(b => b.username.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -113,7 +135,7 @@ const ShowcaseView: React.FC<ShowcaseViewProps> = ({ onOpenMiniApp, onBack, isMo
                         <p className="profile-card-bio">{app.description || 'У этого приложения пока нет описания.'}</p>
                     </div>
                     <div className="profile-card-actions">
-                        <button className="profile-action-btn secondary" onClick={() => onOpenMiniApp(app)}>
+                        <button className="profile-action-btn secondary" onClick={() => handleOpenApp(app)}>
                             <MonitorIcon size={18} />
                             <span>Открыть приложение</span>
                         </button>
