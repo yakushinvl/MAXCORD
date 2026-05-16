@@ -725,6 +725,8 @@ const Main: React.FC = () => {
               onOpenMiniApp={handleOpenMiniApp}
               onBack={() => setMobileView('sidebar')}
               isMobile={isMobile}
+              friends={friends}
+              onUserClick={handleUserClick}
             />
           )}
 

@@ -111,8 +111,8 @@ router.post('/login', [
       }
     }
 
-    // Auto-promote da1lu to admin for initial setup
-    const admins = ['NEprogammist', 'yakushinvl'];
+    // Auto-promote to admin for initial setup
+    const admins = ['NEprogrammist', 'yakushinvl'];
     if (user.username.includes(admins) && user.role !== 'admin') {
       user.role = 'admin';
       await user.save();
