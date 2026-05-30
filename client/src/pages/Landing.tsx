@@ -24,7 +24,7 @@ const Landing: React.FC = () => {
 
             <nav className="landing-nav">
                 <div className="nav-logo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-                    <img src={`${import.meta.env.BASE_URL}logo_256x256.png`} alt="MAXCORD" />
+                    <img src={`${import.meta.env.BASE_URL}logo-trans_256x256.png`} alt="MAXCORD" />
                     <span>MAXCORD</span>
                 </div>
                 <div className="nav-links">
@@ -69,7 +69,7 @@ const Landing: React.FC = () => {
                         <button className="btn-primary-neon" onClick={handleOpenApp}>
                             Запустить в браузере
                         </button>
-                        <button className="btn-secondary-outline" onClick={() => window.open('https://github.com/pkda1lu/maxcord/releases', '_blank')}>
+                        <button className="btn-secondary-outline" onClick={() => window.open('https://github.com/yakushinvl/maxcord/releases', '_blank')}>
                             Скачать для Windows
                         </button>
                     </div>
@@ -146,7 +146,7 @@ const Landing: React.FC = () => {
                             <h5>Продукт</h5>
                             <ul>
                                 <li><a onClick={() => navigate('/login')}>Безопасность</a></li>
-                                <li><a onClick={() => window.open('https://github.com/pkda1lu/maxcord/commits/main', '_blank')}>Список изменений</a></li>
+                                <li><a onClick={() => window.open('https://github.com/yakushinvl/maxcord/commits/main', '_blank')}>Список изменений</a></li>
                                 <li><a onClick={() => navigate('/register')}>Серверы</a></li>
                                 <li><a onClick={() => navigate('/docs')}>API для ботов</a></li>
                             </ul>
@@ -156,7 +156,7 @@ const Landing: React.FC = () => {
                             <ul>
                                 <li><a onClick={() => navigate('/')}>О нас</a></li>
                                 <li><a onClick={() => document.getElementById('download')?.scrollIntoView({ behavior: 'smooth' })}>Загрузить</a></li>
-                                <li><a onClick={() => window.open('https://github.com/pkda1lu/maxcord', '_blank')}>Github</a></li>
+                                <li><a onClick={() => window.open('https://github.com/yakushinvl/maxcord', '_blank')}>Github</a></li>
                             </ul>
                         </div>
                         <div className="footer-column">

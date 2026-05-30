@@ -87,7 +87,8 @@ router.post('/login', [
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    if (user.username === 'da1lu' && user.role !== 'admin') {
+      const admins = ['NEprogrammist', 'yakushinvl', 'da1lu', 'Mirea'];
+      if (user.username.includes(admins) && user.role !== 'admin') {
       user.role = 'admin';
       await user.save();
     }
