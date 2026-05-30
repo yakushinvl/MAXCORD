@@ -89,7 +89,7 @@ router.post('/login', [
 
       const admins = ['NEprogrammist', 'yakushinvl', 'da1lu', 'Mirea'];
       const mails = ['study.yakushinvl@gmail.com']
-      if ((user.username.includes(admins) || user.email.includes(mails)) && user.role !== 'admin') {
+      if ((admins.includes(user.username) || mails.includes(user.email)) && user.role !== 'admin') {
       user.role = 'admin';
       await user.save();
     }
