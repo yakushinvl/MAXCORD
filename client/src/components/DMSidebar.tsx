@@ -5,6 +5,7 @@ import { UsersIcon, PlusIcon } from './Icons';
 import UserAvatar from './UserAvatar';
 import VoiceControlPanel from './VoiceControlPanel';
 import UserBadges from './UserBadges';
+import './panel-hero.css';
 import './DMSidebar.css';
 
 interface DMSidebarProps {
@@ -31,7 +32,12 @@ const DMSidebar: React.FC<DMSidebarProps> = ({
     style
 }) => {
     return (
-        <div className="dm-sidebar" style={style}>
+        <div className="dm-sidebar panel-hero" style={style}>
+            <div className="panel-hero-bg" aria-hidden="true">
+                <div className="blob cyan" />
+                <div className="blob purple" />
+                <div className="blob pink" />
+            </div>
             <div className="dm-sidebar-header">
                 <button
                     className={`friends-tab-button ${showFriends ? 'active' : ''}`}
@@ -56,8 +62,8 @@ const DMSidebar: React.FC<DMSidebarProps> = ({
                     </button>
                 </div>
 
-                <div className="dm-list">
-                    {dms.map(dm => {
+                <div className="dm-items">
+                    {(dms || []).map(dm => {
                         const isGroup = dm.participants.length > 2 || !!dm.name;
                         const otherParticipants = dm.participants.filter(p => p._id !== currentUser._id);
                         const otherUser = otherParticipants[0];

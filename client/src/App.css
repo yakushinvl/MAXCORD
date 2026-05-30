@@ -4,8 +4,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background-color: transparent !important;
-  background: transparent !important;
+  background: transparent;
   position: relative;
 }
 
@@ -16,8 +15,7 @@
 
 .app-content,
 .preview-container {
-  background-color: transparent !important;
-  background: transparent !important;
+  background: transparent;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -26,10 +24,40 @@
   z-index: 1;
 }
 
-body {
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  background-color: transparent !important;
-  background: transparent !important;
+/* While any modal is open, freeze the global animated liquid background and its
+   inner gradient/sphere layers. Without this, the constantly-moving gradient
+   shimmers through the modal's backdrop-filter every frame. Refcounted via
+   useFreezeAppBackground so nested modals work. */
+body[data-modal-open] #global-liquid-bg,
+body[data-modal-open] #global-liquid-bg * {
+  animation-play-state: paused !important;
+}
+
+/* When the user enables performance mode (AppearanceContext) or has
+   `prefers-reduced-motion` set in their OS, strip out global keyframe loops
+   and reduce CSS transitions to instant. Framer-motion is independently
+   short-circuited via MotionConfig in MotionPreferences. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  #global-liquid-bg,
+  #global-liquid-bg * {
+    animation: none !important;
+  }
+}
+
+body[data-reduce-motion="force"] *,
+body[data-reduce-motion="force"] *::before,
+body[data-reduce-motion="force"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+body[data-reduce-motion="force"] #global-liquid-bg,
+body[data-reduce-motion="force"] #global-liquid-bg * {
+  animation: none !important;
 }

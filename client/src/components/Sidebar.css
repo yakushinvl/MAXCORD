@@ -1,7 +1,7 @@
 .sidebar {
   width: var(--sidebar-width);
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
+  /* Background provided by .panel-hero gradient + animated blobs.
+     No backdrop-filter — would double-blur over custom user bg. */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -38,6 +38,45 @@
   -ms-overflow-style: none;
 }
 
+.server-item {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.pill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.pill span {
+  width: 4px;
+  height: 8px;
+  background: white;
+  border-radius: 0 4px 4px 0;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0;
+}
+
+.server-item:hover .pill span {
+  height: 20px;
+  opacity: 1;
+}
+
+.server-item.active .pill span {
+  height: 40px;
+  opacity: 1;
+  background: var(--primary-neon);
+  box-shadow: 0 0 10px var(--primary-neon);
+}
+
 .server-icon {
   position: relative;
   width: 54px;
@@ -62,7 +101,7 @@
 .server-icon:hover {
   border-radius: 15px;
   background: var(--primary-neon);
-  transform: scale(1.05);
+  transform: none; /* Removed transform to avoid conflicting with pressFeedback and pill */
   color: black;
   border-color: var(--primary-neon);
   box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
@@ -74,17 +113,6 @@
   border-color: var(--primary-neon);
   box-shadow: 0 0 30px rgba(0, 229, 255, 0.5);
   color: black;
-}
-
-.server-icon.active::before {
-  content: '';
-  position: absolute;
-  left: -12px;
-  width: 4px;
-  height: 36px;
-  background: var(--primary-neon);
-  border-radius: 0 4px 4px 0;
-  box-shadow: 0 0 15px var(--primary-neon);
 }
 
 .server-icon:hover img,
@@ -156,6 +184,62 @@
   transform: translateY(-2px);
 }
 
+.friends-sidebar-icon {
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border);
+  color: var(--text-dim);
+}
+
+.friends-sidebar-icon:hover,
+.friends-sidebar-icon.active {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #ffffff;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.25);
+}
+
+.friends-sidebar-icon:hover svg,
+.friends-sidebar-icon.active svg {
+  color: #ffffff;
+  stroke: #ffffff;
+  fill: #ffffff;
+}
+
+.showcase-sidebar-icon {
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border);
+}
+
+.showcase-sidebar-icon:hover,
+.showcase-sidebar-icon.active {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent-pink);
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(255, 0, 200, 0.3);
+}
+
+.miniapp-minimized-icon {
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--accent-pink, #ff00c8);
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 0 16px rgba(255, 0, 200, 0.25);
+}
+
+.miniapp-minimized-icon:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+  box-shadow: 0 0 22px rgba(255, 0, 200, 0.5);
+}
+
+.miniapp-minimized-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
 .sidebar-user {
   width: 100%;
   padding: 24px 0;
@@ -185,10 +269,11 @@
   color: #fff;
 }
 
-.user-avatar {
+.user-avatar,
+.user-avatar.user-avatar-container {
   width: 44px;
   height: 44px;
-  border-radius: 14px;
+  border-radius: 14px !important;
   /* Squircle */
   background: var(--bg-accent);
   display: flex;
@@ -205,7 +290,8 @@
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
-.user-avatar:hover {
+.user-avatar:hover,
+.user-avatar.user-avatar-container:hover {
   transform: scale(1.1) rotate(5deg);
   border-color: var(--primary-neon);
   box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);

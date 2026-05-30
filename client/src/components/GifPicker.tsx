@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { motion } from 'framer-motion';
+import { popoverVariants, popoverTransition } from '../animations/transitions';
 import './GifPicker.css';
 
 interface GifPickerProps {
@@ -47,7 +49,15 @@ const GifPicker: React.FC<GifPickerProps> = ({ onSelect, onClose }) => {
     };
 
     return (
-        <div className="gif-picker-container glass-panel-base" onClick={(e) => e.stopPropagation()}>
+        <motion.div
+            className="gif-picker-container glass-panel-base"
+            onClick={(e) => e.stopPropagation()}
+            variants={popoverVariants}
+            initial="initial"
+            animate="animate"
+            transition={popoverTransition}
+            style={{ transformOrigin: 'bottom right' }}
+        >
             <div className="gif-picker-header">
                 <input
                     type="text"
@@ -80,7 +90,7 @@ const GifPicker: React.FC<GifPickerProps> = ({ onSelect, onClose }) => {
                     </div>
                 )}
             </div>
-        </div>
+        </motion.div>
     );
 };
 

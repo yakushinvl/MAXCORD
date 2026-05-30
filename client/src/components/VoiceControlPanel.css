@@ -1,256 +1,329 @@
-.voice-control-panel {
-    background: rgba(10, 10, 15, 0.85) !important;
-    backdrop-filter: blur(20px) saturate(180%) !important;
-    border-top: 1px solid var(--glass-border) !important;
-    border-radius: 0 !important;
-    padding: 10px 12px;
+/* ============================================================
+   VoiceControlPanel (vcp) — redesigned
+   Sits at the bottom of DMSidebar / ServerSidebar. Glass card style
+   that matches the rest of the panel-hero language. iOS-spring
+   feedback comes from framer-motion on the buttons themselves.
+   ============================================================ */
+
+.vcp {
+    --vcp-connected: #2dd4bf;   /* excellent */
+    --vcp-good: #84cc16;        /* good (lime — clearly distinct from excellent) */
+    --vcp-connecting: #fbbf24;  /* connecting / reconnecting */
+    --vcp-poor: #fb923c;        /* slow / unstable (orange) */
+    --vcp-lost: #ef4444;        /* lost (red) */
+    --vcp-danger: #ff4d4d;
+    --vcp-accent: var(--primary-neon, #00f2ff);
+
+    position: relative;
+    margin: 8px;
+    padding: 12px 14px 14px;
+    border-radius: 16px;
+    background: linear-gradient(160deg,
+        rgba(255, 255, 255, 0.05),
+        rgba(255, 255, 255, 0.02));
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin-top: auto;
+    gap: 12px;
     z-index: 20;
-    box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.3);
 }
 
-.voice-info {
+/* === Header (status + label + hangup) === */
+.vcp__header {
     display: flex;
     align-items: center;
-    gap: 14px;
-}
-
-.voice-status-indicator {
+    gap: 10px;
     position: relative;
-    width: 14px;
-    height: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
 }
 
-.voice-status-dot {
+.vcp__status {
+    position: relative;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: help;
+}
+
+.vcp__status-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
     width: 8px;
     height: 8px;
-    background: #23a559;
     border-radius: 50%;
-    position: absolute;
-    box-shadow: 0 0 10px #23a559;
+    transform: translate(-50%, -50%);
+    background: var(--vcp-connected);
+    box-shadow: 0 0 10px var(--vcp-connected);
     z-index: 2;
+    transition: background 0.25s ease, box-shadow 0.25s ease;
 }
 
-.voice-status-indicator.connecting .voice-status-dot {
-    background: #f29332;
-    box-shadow: 0 0 10px #f29332;
-}
-
-.voice-status-indicator.connecting .pulse-ring {
-    border-color: #f29332;
-}
-
-.pulse-ring {
+.vcp__status-ring {
     position: absolute;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     border-radius: 50%;
-    border: 2px solid #23a559;
-    animation: voicePulse 2s infinite;
-    z-index: 1;
+    border: 1.5px solid var(--vcp-connected);
+    animation: vcpPulse 2s ease-out infinite;
+    opacity: 0.55;
+    transition: border-color 0.25s ease;
 }
 
-.voice-details {
+/* Tone variants — status dot/ring color matches the effective state */
+.vcp__status.tone-good .vcp__status-dot      { background: var(--vcp-good);       box-shadow: 0 0 10px var(--vcp-good); }
+.vcp__status.tone-good .vcp__status-ring     { border-color: var(--vcp-good); }
+.vcp__status.tone-poor .vcp__status-dot      { background: var(--vcp-poor);       box-shadow: 0 0 10px var(--vcp-poor); }
+.vcp__status.tone-poor .vcp__status-ring     { border-color: var(--vcp-poor); }
+.vcp__status.tone-lost .vcp__status-dot      { background: var(--vcp-lost);       box-shadow: 0 0 10px var(--vcp-lost); }
+.vcp__status.tone-lost .vcp__status-ring     { border-color: var(--vcp-lost); animation-duration: 1s; }
+.vcp__status.tone-connecting .vcp__status-dot{ background: var(--vcp-connecting); box-shadow: 0 0 10px var(--vcp-connecting); }
+.vcp__status.tone-connecting .vcp__status-ring{ border-color: var(--vcp-connecting); animation-duration: 1.2s; }
+.vcp__status.tone-unknown .vcp__status-dot   { background: #6b7280;               box-shadow: none; }
+.vcp__status.tone-unknown .vcp__status-ring  { border-color: rgba(255,255,255,0.15); animation: none; opacity: 0.3; }
+
+@keyframes vcpPulse {
+    0%   { transform: scale(0.85); opacity: 0.7; }
+    70%  { transform: scale(1.5);  opacity: 0;   }
+    100% { transform: scale(1.5);  opacity: 0;   }
+}
+
+.vcp__labels {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
-    min-width: 0;
-    flex: 1;
+    line-height: 1.25;
 }
 
-.voice-connection-status {
-    font-size: 13px;
-    font-weight: 700;
-    color: #23a559;
+.vcp__eyebrow {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--vcp-connected);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    transition: color 0.3s;
+    transition: color 0.25s ease;
 }
+.vcp--tone-good       .vcp__eyebrow { color: var(--vcp-good); }
+.vcp--tone-poor       .vcp__eyebrow { color: var(--vcp-poor); }
+.vcp--tone-lost       .vcp__eyebrow { color: var(--vcp-lost); }
+.vcp--tone-connecting .vcp__eyebrow { color: var(--vcp-connecting); }
+.vcp--tone-unknown    .vcp__eyebrow { color: var(--text-dim, rgba(255,255,255,0.55)); }
 
-.voice-connection-status.connecting {
-    color: #f29332;
-}
-
-.voice-channel-name {
-    font-size: 11px;
-    color: var(--text-dim);
+.vcp__line {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-dim, rgba(255, 255, 255, 0.55));
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    margin-top: 2px;
 }
 
-.voice-channel-name.connecting {
-    color: #f29332;
-    animation: connectingPulse 1.5s infinite;
-}
-
-@keyframes connectingPulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-}
-
-.voice-disconnect-btn {
-    background: rgba(255, 77, 77, 0.1);
-    border: 1px solid rgba(255, 77, 77, 0.2);
+/* === Hangup === */
+.vcp__hangup {
+    flex-shrink: 0;
     width: 32px;
     height: 32px;
-    border-radius: 8px;
+    border-radius: 10px;
+    background: rgba(255, 77, 77, 0.12);
+    border: 1px solid rgba(255, 77, 77, 0.25);
+    color: var(--vcp-danger);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s;
+    padding: 0;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+.vcp__hangup:hover {
+    background: var(--vcp-danger);
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(255, 77, 77, 0.45);
+}
+.vcp__hangup svg {
+    transform: rotate(135deg);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.voice-disconnect-btn:hover {
-    background: #ff4d4d;
-    box-shadow: 0 0 15px rgba(255, 77, 77, 0.4);
-    transform: scale(1.05);
+/* === Action buttons row === */
+.vcp__actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
 }
 
-.voice-disconnect-btn:hover svg {
-    color: white !important;
-}
-
-.voice-actions {
-    display: flex;
-    gap: 8px;
-}
-
-.voice-action-btn {
-    flex: 1;
-    height: 34px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--glass-border);
-    border-radius: 8px;
+.vcp__btn {
+    height: 38px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: var(--text-dim, rgba(255, 255, 255, 0.7));
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    color: var(--text-muted);
+    padding: 0;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.vcp__btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
 }
 
-.voice-action-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: white;
+/* danger = mic muted / sound off (red active state) */
+.vcp__btn--danger.is-active {
+    background: rgba(255, 77, 77, 0.16);
+    border-color: rgba(255, 77, 77, 0.4);
+    color: var(--vcp-danger);
+    box-shadow: inset 0 0 12px rgba(255, 77, 77, 0.12);
+}
+.vcp__btn--danger.is-active:hover {
+    background: rgba(255, 77, 77, 0.22);
 }
 
-.voice-action-btn.active {
-    background: rgba(255, 77, 77, 0.1);
-    border-color: rgba(255, 77, 77, 0.3);
+/* accent = video on / screen sharing (cyan active state) */
+.vcp__btn--accent.is-active {
+    background: rgba(0, 242, 255, 0.14);
+    border-color: rgba(0, 242, 255, 0.4);
+    color: var(--vcp-accent);
+    box-shadow: inset 0 0 12px rgba(0, 242, 255, 0.15),
+                0 0 14px rgba(0, 242, 255, 0.15);
+}
+.vcp__btn--accent.is-active:hover {
+    background: rgba(0, 242, 255, 0.2);
 }
 
-.voice-action-btn.sharing {
-    background: rgba(0, 229, 255, 0.1);
-    border-color: rgba(0, 229, 255, 0.3);
-    box-shadow: inset 0 0 10px rgba(0, 229, 255, 0.1);
-}
-
-.voice-action-btn.active:hover {
-    background: rgba(255, 77, 77, 0.2);
-}
-
-.voice-action-btn.sharing:hover {
-    background: rgba(0, 229, 255, 0.2);
-}
-
-/* Connection Tooltip */
-.voice-connection-tooltip {
+/* === Rich tooltip (hover on status indicator) === */
+.vcp__tooltip {
     position: absolute;
-    bottom: calc(100% + 20px);
-    left: -10px;
-    min-width: 180px;
-    padding: 12px;
-    z-index: 9999; /* Higher z-index */
+    left: 0;
+    bottom: calc(100% + 12px);
+    min-width: 240px;
+    padding: 0;
+    border-radius: 14px;
+    background: rgba(12, 12, 20, 0.97);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+        0 16px 40px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    z-index: 9999;
     pointer-events: none;
-    animation: tooltipFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+    animation: vcpTooltipIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     transform-origin: bottom left;
-    background: rgba(15, 15, 25, 0.98) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8) !important;
+}
+@keyframes vcpTooltipIn {
+    from { opacity: 0; transform: translateY(8px) scale(0.94); }
+    to   { opacity: 1; transform: translateY(0)   scale(1);    }
 }
 
-.voice-connection-tooltip::after {
-    content: '';
-    position: absolute;
-    bottom: -6px;
-    left: 15px;
-    border-left: 6px solid transparent;
-    border-right: 6px solid transparent;
-    border-top: 6px solid rgba(25, 25, 35, 0.95);
-}
-
-@keyframes tooltipFadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px) scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-.tooltip-header {
+.vcp__tooltip-head {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.tooltip-header span {
-    font-size: 11px;
+    padding: 11px 14px;
+    background: linear-gradient(135deg,
+        rgba(0, 242, 255, 0.06),
+        rgba(112, 0, 255, 0.04));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 10px;
     font-weight: 800;
-    color: #8e9297;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1.2px;
+    color: rgba(255, 255, 255, 0.75);
+    transition: background 0.25s ease, color 0.25s ease;
+}
+/* Tone-tinted header gradients so the whole pill reads at a glance */
+.vcp__tooltip-head.tone-good       { background: linear-gradient(135deg, rgba(132, 204, 22, 0.1),  rgba(132, 204, 22, 0.04)); }
+.vcp__tooltip-head.tone-poor       { background: linear-gradient(135deg, rgba(251, 146, 60, 0.12), rgba(251, 146, 60, 0.05)); }
+.vcp__tooltip-head.tone-lost       { background: linear-gradient(135deg, rgba(239, 68, 68, 0.14),  rgba(239, 68, 68, 0.06));  color: #fff; }
+.vcp__tooltip-head.tone-connecting { background: linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(251, 191, 36, 0.05)); }
+.vcp__tooltip-head.tone-unknown    { background: linear-gradient(135deg, rgba(255, 255, 255, 0.04),rgba(255, 255, 255, 0.02)); }
+.vcp__tooltip-head > span:nth-child(2) {
+    flex: 1;
+    min-width: 0;
+}
+.vcp__tooltip-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--vcp-connected);
+    box-shadow: 0 0 8px var(--vcp-connected);
+    flex-shrink: 0;
+    transition: background 0.25s ease, box-shadow 0.25s ease;
+}
+.vcp__tooltip-dot.tone-good       { background: var(--vcp-good);       box-shadow: 0 0 8px var(--vcp-good); }
+.vcp__tooltip-dot.tone-poor       { background: var(--vcp-poor);       box-shadow: 0 0 8px var(--vcp-poor); }
+.vcp__tooltip-dot.tone-lost       { background: var(--vcp-lost);       box-shadow: 0 0 8px var(--vcp-lost);
+    animation: vcpDotBlink 1s infinite; }
+.vcp__tooltip-dot.tone-connecting { background: var(--vcp-connecting); box-shadow: 0 0 8px var(--vcp-connecting); }
+.vcp__tooltip-dot.tone-unknown    { background: #6b7280;               box-shadow: none; }
+
+@keyframes vcpDotBlink {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.35; }
 }
 
-.tooltip-header .tooltip-header-dot {
-    width: 6px;
-    height: 6px;
-    background: #23a559;
-    border-radius: 50%;
-    box-shadow: 0 0 8px #23a559;
+/* Quality-bars meter — 4 segments grow taller with better connection */
+.vcp__tooltip-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 12px;
     flex-shrink: 0;
 }
+.vcp__tooltip-bars .bar {
+    width: 3px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    transition: background 0.2s ease;
+}
+.vcp__tooltip-bars .bar:nth-child(1) { height: 3px; }
+.vcp__tooltip-bars .bar:nth-child(2) { height: 6px; }
+.vcp__tooltip-bars .bar:nth-child(3) { height: 9px; }
+.vcp__tooltip-bars .bar:nth-child(4) { height: 12px; }
+.vcp__tooltip-bars .bar.filled.tone-excellent  { background: var(--vcp-connected);  box-shadow: 0 0 4px var(--vcp-connected); }
+.vcp__tooltip-bars .bar.filled.tone-good       { background: var(--vcp-good);       box-shadow: 0 0 4px var(--vcp-good); }
+.vcp__tooltip-bars .bar.filled.tone-poor       { background: var(--vcp-poor);       box-shadow: 0 0 4px var(--vcp-poor); }
+.vcp__tooltip-bars .bar.filled.tone-lost       { background: var(--vcp-lost);       box-shadow: 0 0 4px var(--vcp-lost); }
+.vcp__tooltip-bars .bar.filled.tone-connecting { background: var(--vcp-connecting); }
+.vcp__tooltip-bars .bar.filled.tone-unknown    { background: rgba(255, 255, 255, 0.25); }
 
-.tooltip-content {
+/* Body sections */
+.vcp__tooltip-section {
+    padding: 10px 14px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
+}
+.vcp__tooltip-section--alt {
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.012);
 }
 
-.tooltip-row {
+.vcp__tooltip-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-}
-
-.tooltip-row .label {
     font-size: 12px;
-    color: #b9bbbe;
+    color: var(--text-dim, rgba(255, 255, 255, 0.55));
 }
-
-.tooltip-row .value {
+.vcp__tooltip-value {
+    font-weight: 700;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
     font-size: 12px;
-    font-weight: 600;
-    color: white;
 }
-
-.value.quality-excellent { color: #23a559 !important; }
-.value.quality-good { color: #f29332 !important; }
-.value.quality-poor { color: #ff4d4d !important; }
-.value.quality-lost { color: #747f8d !important; }
+.vcp__tooltip-value.tone-excellent  { color: var(--vcp-connected); }
+.vcp__tooltip-value.tone-good       { color: var(--vcp-good); }
+.vcp__tooltip-value.tone-poor       { color: var(--vcp-poor); }
+.vcp__tooltip-value.tone-lost       { color: var(--vcp-lost); }
+.vcp__tooltip-value.tone-connecting { color: var(--vcp-connecting); }
+.vcp__tooltip-value.tone-unknown    { color: var(--text-dim, rgba(255, 255, 255, 0.55)); }

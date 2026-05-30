@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import ReactDOM from 'react-dom';
+import { motion } from 'framer-motion';
+import {
+  overlayVariants,
+  overlayTransition,
+  modalPopVariants,
+  modalPopTransition,
+} from '../animations/transitions';
+import { useFreezeAppBackground } from '../animations/useFreezeAppBackground';
 import './ScreenSourceSelector.css';
 
 const SourceItem = memo(({ source, isSelected, onSelect, onDoubleClick, resolution, frameRate, videoCodec }: any) => {
@@ -41,6 +49,7 @@ interface ScreenSourceSelectorProps {
 }
 
 const ScreenSourceSelector: React.FC<ScreenSourceSelectorProps> = ({ onSelect, onClose }) => {
+    useFreezeAppBackground(true);
     const [sources, setSources] = useState<DesktopSource[]>([]);
     const [selectedTab, setSelectedTab] = useState<'screen' | 'window'>('screen');
     const [loading, setLoading] = useState(true);
@@ -93,8 +102,20 @@ const ScreenSourceSelector: React.FC<ScreenSourceSelectorProps> = ({ onSelect, o
     };
 
     return ReactDOM.createPortal(
-        <div className="screen-source-selector-overlay" onClick={onClose}>
-            <div className="screen-source-selector-modal" onClick={e => e.stopPropagation()}>
+        <motion.div
+            className="screen-source-selector-overlay"
+            onClick={onClose}
+            variants={overlayVariants}
+            initial="initial" animate="animate"
+            transition={overlayTransition}
+        >
+            <motion.div
+                className="screen-source-selector-modal"
+                onClick={e => e.stopPropagation()}
+                variants={modalPopVariants}
+                initial="initial" animate="animate"
+                transition={modalPopTransition}
+            >
                 <div className="screen-source-selector-header">
                     <h2>Выберите, что транслировать</h2>
                     <button className="close-button" onClick={onClose}>&times;</button>
@@ -198,8 +219,8 @@ const ScreenSourceSelector: React.FC<ScreenSourceSelectorProps> = ({ onSelect, o
                         Прямой эфир
                     </button>
                 </div>
-            </div>
-        </div>,
+            </motion.div>
+        </motion.div>,
         document.body
     );
 };

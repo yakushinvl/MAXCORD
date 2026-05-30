@@ -105,6 +105,27 @@
   gap: 15px;
   min-width: 0;
   overflow: hidden;
+  position: relative;
+}
+
+/* iOS-style content swap layers managed by AnimatePresence in Main.tsx.
+   Each layer fills the parent so the cross-fade/scale doesn't reflow siblings.
+   `will-change` is NOT set here — framer-motion adds it on the animating element
+   only for the duration of the animation, which avoids permanently allocating a
+   GPU layer per swap slot. */
+.content-swap-layer {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  position: relative;
+}
+
+.content-inner-layer {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+  height: 100%;
 }
 
 .is-mobile .main-content-area {

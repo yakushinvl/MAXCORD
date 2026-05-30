@@ -772,6 +772,14 @@
   color: var(--text-dim);
 }
 
+.participant-placeholder .user-avatar-container {
+  border-radius: 20px !important;
+}
+
+.notification-avatar .user-avatar-container {
+  border-radius: 12px !important;
+}
+
 .participant-label {
   position: absolute;
   bottom: 15px;
@@ -798,6 +806,37 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+
+.screenshare-available-btn {
+  position: absolute;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 14px;
+  background: var(--primary-neon);
+  color: black;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 12;
+  box-shadow: 0 6px 20px rgba(0, 229, 255, 0.35);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  white-space: nowrap;
+}
+
+.screenshare-available-btn:hover {
+  transform: translateX(-50%) scale(1.05);
+  box-shadow: 0 8px 26px rgba(0, 229, 255, 0.5);
+}
+
+.participant-slot:has(.screenshare-available-btn) .participant-label {
+  display: none;
 }
 
 /* --- ANIMATIONS --- */

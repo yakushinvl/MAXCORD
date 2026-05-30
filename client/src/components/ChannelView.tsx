@@ -1,11 +1,15 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
+import { motion } from 'framer-motion';
 import { Socket } from 'socket.io-client';
 import { Channel, Message, Server, User } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useDialog } from '../contexts/DialogContext';
 import axios from 'axios';
 import { getAvatarUrl, getFullUrl } from '../utils/avatar';
-import { HashtagIcon, DocumentIcon, PlusIcon, TrashIcon, DownloadIcon, PinIcon, ArrowDownIcon, ReplyIcon, CopyIcon, CameraIcon } from './Icons';
+import { HashtagIcon, DocumentIcon, PlusIcon, TrashIcon, DownloadIcon, PinIcon, ArrowDownIcon, ReplyIcon, CopyIcon, CameraIcon, SearchIcon } from './Icons';
+import MessageSearchPanel from './MessageSearchPanel';
+import './panel-hero.css';
 import './ChannelView.css';
 import './Attachments.css';
 import MemberContextMenu from './MemberContextMenu';
@@ -13,6 +17,7 @@ import CustomVideoPlayer from './CustomVideoPlayer';
 import CustomAudioPlayer from './CustomAudioPlayer';
 import MediaLightbox from './MediaLightbox';
 import MentionAutocomplete from './MentionAutocomplete';
+import { SkeletonList } from './Skeleton';
 import { Role } from '../types';
 import { computePermissions, hasPermission, Permissions } from '../utils/permissions';
 import { useChatSettings } from '../contexts/ChatSettingsContext';
@@ -121,11 +126,12 @@ const MessageItem = React.memo<{
   onReply: (msg: Message) => void;
   scrollToMessage: (msgId: string) => void;
   onInteractiveButtonClick: (messageId: string, actionId: string) => void;
+  isFresh?: boolean;
 }>(({
   msg, prev, user, server, displayEmbeds, showHoverActions, mentionHighlight, canPin, canReact,
   onUserClick, onContextMenu, onTogglePin, onDelete, formatDate, renderMessageContent,
   handleDownload, setLightboxMedia, setLightboxIndex, setLightboxOpen, allMessages,
-  onReact, onReply, scrollToMessage, onInteractiveButtonClick
+  onReact, onReply, scrollToMessage, onInteractiveButtonClick, isFresh
 }) => {
   const { confirm: customConfirm } = useDialog();
 
@@ -331,10 +337,23 @@ const MessageItem = React.memo<{
     [server.members, msg.author._id]
   );
 
+  // Only animate genuinely new (incoming) messages; historical batches and
+  // pagination loads render with no entrance animation to keep the chat snappy.
+  const messageProps = isFresh ? {
+    initial: { opacity: 0, y: 6 },
+    animate: { opacity: 1, y: 0 },
+    transition: { type: 'spring' as const, stiffness: 420, damping: 34, mass: 0.75 },
+  } : {};
+  const MessageBox: any = isFresh ? motion.div : 'div';
+
   return (
     <>
       {showDate && <div className="message-date-divider"><span>{formatDate(msg.createdAt)}</span></div>}
-      <div id={`msg-${msg._id}`} className={`message ${grouped ? 'grouped' : 'with-author'} ${mentionHighlight && msg.mentions?.some(m => m._id === user?._id) ? 'mention-highlight' : ''} ${msg.replyTo ? 'has-reply' : ''}`}>
+      <MessageBox
+        id={`msg-${msg._id}`}
+        className={`message ${grouped ? 'grouped' : 'with-author'} ${mentionHighlight && msg.mentions?.some(m => m._id === user?._id) ? 'mention-highlight' : ''} ${msg.replyTo ? 'has-reply' : ''}`}
+        {...messageProps}
+      >
         {msg.replyTo && (
           <div className="message-reply-preview" onClick={() => scrollToMessage(msg.replyTo!._id)}>
             <div className="reply-line" />
@@ -510,7 +529,7 @@ const MessageItem = React.memo<{
             onReact={(emoji) => onReact(msg._id, emoji)}
           />
         </div>
-      </div>
+      </MessageBox>
 
       {showEmojiPicker && createPortal(
         <div
@@ -568,6 +587,20 @@ const ChannelView: React.FC<ChannelViewProps> = ({
   const [showAttachments, setShowAttachments] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState<{ x: number, y: number } | null>(null);
 
+  // Track which message id was last in the list at the previous render. Anything
+  // appearing AFTER that index this render counts as a fresh incoming message and
+  // gets the spring entrance animation. Pagination/history loads (prepended) and
+  // the initial mount don't trigger the animation.
+  const lastSeenIdRef = useRef<string | null>(null);
+  const prevLastSeenId = lastSeenIdRef.current;
+  const lastSeenIdx = prevLastSeenId
+    ? messages.findIndex(m => m._id === prevLastSeenId)
+    : -1;
+  const hasBaseline = prevLastSeenId !== null && lastSeenIdx !== -1;
+  useEffect(() => {
+    if (messages.length > 0) lastSeenIdRef.current = messages[messages.length - 1]._id;
+  }, [messages]);
+
   const userPermissions = useMemo(() => {
     if (!user) return 0n;
     return computePermissions(user._id, server, channel);
@@ -594,8 +627,42 @@ const ChannelView: React.FC<ChannelViewProps> = ({
   const [mentionStartIndex, setMentionStartIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const [showPins, setShowPins] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [flashMessageId, setFlashMessageId] = useState<string | null>(null);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const lastScrollTopRef = useRef(0);
+
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
+  const FIRST_ITEM_INDEX_START = 1_000_000;
+  const [firstItemIndex, setFirstItemIndex] = useState(FIRST_ITEM_INDEX_START);
+  const prevFirstMsgIdRef = useRef<string | null>(null);
+
+  // On channel switch — reset the virtual index baseline.
+  useEffect(() => {
+    setFirstItemIndex(FIRST_ITEM_INDEX_START);
+    prevFirstMsgIdRef.current = null;
+  }, [channel._id]);
+
+  // Detect prepended history pages and shift the index baseline by however many
+  // items were spliced onto the front. This keeps the visible row stable when
+  // older messages are loaded above.
+  useEffect(() => {
+    const newFirstId = messages[0]?._id ?? null;
+    const oldFirstId = prevFirstMsgIdRef.current;
+    if (oldFirstId && newFirstId && oldFirstId !== newFirstId) {
+      const idxInNew = messages.findIndex(m => m._id === oldFirstId);
+      if (idxInNew > 0) setFirstItemIndex(fi => fi - idxInNew);
+    }
+    prevFirstMsgIdRef.current = newFirstId;
+  }, [messages]);
+
+  const handleStartReached = useCallback(() => {
+    if (hasMore && !isLoadingMore && onLoadMore) onLoadMore();
+  }, [hasMore, isLoadingMore, onLoadMore]);
+
+  const handleAtBottomStateChange = useCallback((atBottom: boolean) => {
+    setShowScrollBottom(!atBottom);
+  }, []);
 
   const handleContextMenu = (e: React.MouseEvent, user: User) => {
     e.preventDefault();
@@ -606,55 +673,65 @@ const ChannelView: React.FC<ChannelViewProps> = ({
     setMessage((prev) => `${prev}@${username} `);
   };
 
+  const jumpToMessage = async (messageId: string, createdAt: string) => {
+    setShowSearch(false);
+    const alreadyLoaded = messages.some(m => m._id === messageId);
+    if (!alreadyLoaded && setMessages) {
+      try {
+        const beforeCursor = new Date(new Date(createdAt).getTime() + 1).toISOString();
+        const afterCursor = new Date(createdAt).toISOString();
+        const [olderRes, newerRes] = await Promise.all([
+          axios.get(`/api/messages/channel/${channel._id}`, { params: { before: beforeCursor, limit: 30 } }),
+          axios.get(`/api/messages/channel/${channel._id}`, { params: { after: afterCursor, limit: 30 } }),
+        ]);
+        const merged = [...olderRes.data, ...newerRes.data];
+        const seen = new Set<string>();
+        const dedup = merged.filter((m: Message) => seen.has(m._id) ? false : (seen.add(m._id), true));
+        dedup.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        setMessages(dedup);
+      } catch (e) { return; }
+    }
+    setFlashMessageId(messageId);
+  };
+
+  useEffect(() => {
+    if (!flashMessageId) return;
+    const idx = messages.findIndex(m => m._id === flashMessageId);
+    if (idx >= 0 && virtuosoRef.current) {
+      virtuosoRef.current.scrollToIndex({ index: idx, behavior: 'smooth', align: 'center' });
+    }
+    let cancelled = false;
+    const attempt = (tries: number) => {
+      if (cancelled) return;
+      const el = document.getElementById(`msg-${flashMessageId}`);
+      if (el) {
+        el.classList.add('msg-search-message-flash');
+        window.setTimeout(() => el.classList.remove('msg-search-message-flash'), 1700);
+        setFlashMessageId(null);
+      } else if (tries > 0) {
+        window.setTimeout(() => attempt(tries - 1), 100);
+      } else {
+        setFlashMessageId(null);
+      }
+    };
+    attempt(15);
+    return () => { cancelled = true; };
+  }, [flashMessageId, messages]);
+
   useEffect(() => {
     setHasScrolledToNew(false);
   }, [channel._id]);
 
   useEffect(() => {
-    // Initial jump to bottom or unread
+    // Virtuoso handles the initial scroll-to-bottom and "follow new messages" itself.
+    // We still flip hasScrolledToNew so downstream gates (TTS, etc.) know the list is settled.
     if (messages.length > 0 && !hasScrolledToNew) {
-      const scrollContainer = scrollContainerRef.current;
-      if (!scrollContainer) return;
-
-      const performScroll = () => {
-        if (initialUnreadCount > 0 && unreadRef.current) {
-          scrollContainer.scrollTop = unreadRef.current.offsetTop - 100;
-        } else {
-          scrollContainer.scrollTop = scrollContainer.scrollHeight;
-        }
-      };
-
-      // Execute immediately and then after a short delay for late-rendering elements
-      performScroll();
-      const t1 = setTimeout(performScroll, 50);
-      const t2 = setTimeout(performScroll, 200);
-      const t3 = setTimeout(performScroll, 500);
-
-      setHasScrolledToNew(true);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
-      };
+      const t = window.setTimeout(() => setHasScrolledToNew(true), 400);
+      return () => window.clearTimeout(t);
     } else if (messages.length === 0 && hasScrolledToNew) {
       setHasScrolledToNew(false);
     }
-  }, [messages.length, initialUnreadCount, hasScrolledToNew, channel._id]);
-
-  useEffect(() => {
-    // New messages - smooth scroll only if already near bottom
-    if (hasScrolledToNew) {
-      const container = scrollContainerRef.current;
-      if (container) {
-        const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 300;
-        if (isNearBottom) {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        } else {
-          setShowScrollBottom(true);
-        }
-      }
-    }
-  }, [messages, hasScrolledToNew]);
+  }, [messages.length, hasScrolledToNew, channel._id]);
 
   // TTS Effect
   useEffect(() => {
@@ -687,7 +764,7 @@ const ChannelView: React.FC<ChannelViewProps> = ({
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    virtuosoRef.current?.scrollToIndex({ index: messages.length - 1, behavior: 'smooth', align: 'end' });
     setShowScrollBottom(false);
   };
 
@@ -696,12 +773,20 @@ const ChannelView: React.FC<ChannelViewProps> = ({
   };
 
   const scrollToMessage = (msgId: string) => {
-    const el = document.getElementById(`msg-${msgId}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      el.classList.add('highlight-flash');
-      setTimeout(() => el.classList.remove('highlight-flash'), 2000);
+    const idx = messages.findIndex(m => m._id === msgId);
+    if (idx >= 0 && virtuosoRef.current) {
+      virtuosoRef.current.scrollToIndex({ index: idx, behavior: 'smooth', align: 'center' });
     }
+    const tryFlash = (tries: number) => {
+      const el = document.getElementById(`msg-${msgId}`);
+      if (el) {
+        el.classList.add('highlight-flash');
+        window.setTimeout(() => el.classList.remove('highlight-flash'), 2000);
+      } else if (tries > 0) {
+        window.setTimeout(() => tryFlash(tries - 1), 80);
+      }
+    };
+    tryFlash(15);
   };
 
   useEffect(() => {
@@ -1045,12 +1130,17 @@ const ChannelView: React.FC<ChannelViewProps> = ({
 
   return (
     <div
-      className={`channel-view ${isDragging ? 'dragging' : ''}`}
+      className={`channel-view panel-hero ${isDragging ? 'dragging' : ''}`}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
+      <div className="panel-hero-bg" aria-hidden="true">
+        <div className="blob cyan" />
+        <div className="blob purple" />
+        <div className="blob pink" />
+      </div>
       {isDragging && (
         <div className="drag-drop-overlay">
           <div className="drag-drop-content">
@@ -1076,6 +1166,13 @@ const ChannelView: React.FC<ChannelViewProps> = ({
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
           </button>
         )}
+        <button
+          className="header-action-btn"
+          onClick={() => setShowSearch(s => !s)}
+          title="Поиск по сообщениям"
+        >
+          <SearchIcon size={20} color={showSearch ? "var(--primary-neon)" : "var(--text-dim)"} />
+        </button>
         <button
           className="header-action-btn"
           onClick={() => setShowPins(!showPins)}
@@ -1146,79 +1243,105 @@ const ChannelView: React.FC<ChannelViewProps> = ({
 
       <StickyPins pinnedMessages={pinnedMessages} onOpenPins={() => setShowPins(true)} />
 
-      <div className="messages-container" ref={scrollContainerRef} onScroll={handleScroll}>
-        {isLoadingMore && <div className="loading-more">Загрузка...</div>}
-        <div className="messages-list">
-          {messages.map((msg, index) => (
-            <React.Fragment key={msg._id}>
-              {initialUnreadCount > 0 && index === messages.length - initialUnreadCount && (
-                <div className="new-messages-marker" ref={unreadRef}>
-                  <div className="new-messages-line" />
-                  <span>Новые сообщения</span>
-                  <div className="new-messages-line" />
+      <div className="messages-container">
+        {messages.length > 0 && (
+        <Virtuoso
+          key={channel._id}
+          ref={virtuosoRef}
+          className="messages-list"
+          style={{ height: '100%', width: '100%' }}
+          data={messages}
+          firstItemIndex={firstItemIndex}
+          initialTopMostItemIndex={Math.max(0, messages.length - 1 - (initialUnreadCount > 0 ? initialUnreadCount : 0))}
+          startReached={handleStartReached}
+          followOutput={(isAtBottom) => (isAtBottom ? 'auto' : false)}
+          atBottomThreshold={120}
+          atBottomStateChange={handleAtBottomStateChange}
+          increaseViewportBy={{ top: 600, bottom: 300 }}
+          components={{
+            Header: () => (
+              isLoadingMore ? (
+                <div className="loading-more">
+                  <SkeletonList rows={3} avatarSize={36} lines={2} />
                 </div>
-              )}
-              <MessageItem
-                msg={msg}
-                prev={messages[index - 1]}
-                user={user}
-                server={server}
-                displayEmbeds={displayEmbeds}
-                showHoverActions={showHoverActions}
-                mentionHighlight={mentionHighlight}
-                canPin={canPin}
-                canReact={canReact}
-                onUserClick={onUserClick}
-                onContextMenu={handleContextMenu}
-                onTogglePin={handleTogglePin}
-                onDelete={handleDeleteMessage}
-                formatDate={formatDate}
-                renderMessageContent={renderMessageContent}
-                handleDownload={handleDownload}
-                setLightboxMedia={setLightboxMedia}
-                setLightboxIndex={setLightboxIndex}
-                setLightboxOpen={setLightboxOpen}
-                allMessages={messages}
-                onReact={handleReact}
-                onReply={(m) => {
-                  setReplyToMessage(m);
-                  inputRef.current?.focus();
-                }}
-                scrollToMessage={scrollToMessage}
-                onInteractiveButtonClick={(messageId, actionId) => socket?.emit('interactive-button-click', { messageId, actionId, channelId: channel._id })}
-              />
-            </React.Fragment>
-          ))}
-          {(() => {
-            const typingNames = Array.from(typingUsers)
-              .map(id => server.members.find(m => String((m.user as any)._id || m.user) === id))
-              .filter(Boolean)
-              .map(m => m?.nickname || (m?.user as any)?.username)
-              .filter(Boolean);
-
-            if (typingNames.length === 0) return null;
-
+              ) : null
+            ),
+            Footer: () => {
+              const typingNames = Array.from(typingUsers)
+                .map(id => server.members.find(m => String((m.user as any)._id || m.user) === id))
+                .filter(Boolean)
+                .map(m => m?.nickname || (m?.user as any)?.username)
+                .filter(Boolean);
+              if (typingNames.length === 0) return <div style={{ height: 8 }} />;
+              return (
+                <div className="typing-indicator-new">
+                  <div className="typing-dots">
+                    <span className="dot"></span>
+                    <span className="dot"></span>
+                    <span className="dot"></span>
+                  </div>
+                  <span className="typing-text">
+                    {typingNames.length === 1 ? (
+                      <><strong>{typingNames[0]}</strong> печатает...</>
+                    ) : typingNames.length === 2 ? (
+                      <><strong>{typingNames[0]}</strong> и <strong>{typingNames[1]}</strong> печатают...</>
+                    ) : (
+                      <><strong>Несколько человек</strong> печатают...</>
+                    )}
+                  </span>
+                </div>
+              );
+            },
+          }}
+          itemContent={(absoluteIndex, msg) => {
+            const idx = absoluteIndex - firstItemIndex;
+            const prev = idx > 0 ? messages[idx - 1] : undefined;
+            const showUnread = initialUnreadCount > 0 && idx === messages.length - initialUnreadCount;
             return (
-              <div className="typing-indicator-new">
-                <div className="typing-dots">
-                  <span className="dot"></span>
-                  <span className="dot"></span>
-                  <span className="dot"></span>
-                </div>
-                <span className="typing-text">
-                  {typingNames.length === 1 ? (
-                    <><strong>{typingNames[0]}</strong> печатает...</>
-                  ) : typingNames.length === 2 ? (
-                    <><strong>{typingNames[0]}</strong> и <strong>{typingNames[1]}</strong> печатают...</>
-                  ) : (
-                    <><strong>Несколько человек</strong> печатают...</>
-                  )}
-                </span>
-              </div>
+              <>
+                {showUnread && (
+                  <div className="new-messages-marker" ref={unreadRef}>
+                    <div className="new-messages-line" />
+                    <span>Новые сообщения</span>
+                    <div className="new-messages-line" />
+                  </div>
+                )}
+                <MessageItem
+                  msg={msg}
+                  prev={prev}
+                  isFresh={hasBaseline && idx > lastSeenIdx}
+                  user={user}
+                  server={server}
+                  displayEmbeds={displayEmbeds}
+                  showHoverActions={showHoverActions}
+                  mentionHighlight={mentionHighlight}
+                  canPin={canPin}
+                  canReact={canReact}
+                  onUserClick={onUserClick}
+                  onContextMenu={handleContextMenu}
+                  onTogglePin={handleTogglePin}
+                  onDelete={handleDeleteMessage}
+                  formatDate={formatDate}
+                  renderMessageContent={renderMessageContent}
+                  handleDownload={handleDownload}
+                  setLightboxMedia={setLightboxMedia}
+                  setLightboxIndex={setLightboxIndex}
+                  setLightboxOpen={setLightboxOpen}
+                  allMessages={messages}
+                  onReact={handleReact}
+                  onReply={(m) => {
+                    setReplyToMessage(m);
+                    inputRef.current?.focus();
+                  }}
+                  scrollToMessage={scrollToMessage}
+                  onInteractiveButtonClick={(messageId, actionId) => socket?.emit('interactive-button-click', { messageId, actionId, channelId: channel._id })}
+                />
+              </>
             );
-          })()}
-          <div ref={messagesEndRef} />
-        </div>
+          }}
+          computeItemKey={(_idx, item) => item._id}
+        />
+        )}
       </div>
 
       <div className="message-input-container">
@@ -1318,14 +1441,20 @@ const ChannelView: React.FC<ChannelViewProps> = ({
       )}
       <MediaLightbox isOpen={lightboxOpen} onClose={() => setLightboxOpen(false)} media={lightboxMedia} initialIndex={lightboxIndex} />
       {createPortal(
-        <AttachmentsModal 
-          isOpen={showAttachments} 
-          onClose={() => setShowAttachments(false)} 
-          channelId={channel._id} 
-          title={`#${channel.name}`} 
+        <AttachmentsModal
+          isOpen={showAttachments}
+          onClose={() => setShowAttachments(false)}
+          channelId={channel._id}
+          title={`#${channel.name}`}
         />,
         document.body
       )}
+      <MessageSearchPanel
+        open={showSearch}
+        onClose={() => setShowSearch(false)}
+        endpoint={`/api/messages/channel/${channel._id}/search`}
+        onJump={jumpToMessage}
+      />
     </div>
   );
 };

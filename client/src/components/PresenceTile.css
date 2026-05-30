@@ -1,0 +1,299 @@
+/* Reuses .p-card base from VoiceChannelView.css for grid sizing + shadow.
+   Adds music-player-styled overlays on top. */
+
+.presence-card {
+  cursor: default !important;
+  position: relative;
+  overflow: hidden;
+  background-size: cover !important;
+  background-position: center !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  isolation: isolate;
+}
+
+/* Lush blurred-cover backdrop layer — fills the tile, blurred for depth.
+   Sits beneath the hero artwork and overlays. */
+.presence-cover-bg {
+  position: absolute;
+  inset: -12px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(30px) saturate(1.3) brightness(0.55);
+  transform: scale(1.15);
+  z-index: 0;
+}
+
+.presence-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+.presence-bg-video { filter: brightness(0.7) saturate(1.1); }
+
+/* Hero square cover — centered, slightly raised, with shadow */
+.presence-cover-hero {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 42%;
+  aspect-ratio: 1 / 1;
+  margin-top: -2%;
+  transform: translate(-50%, -50%);
+  background-size: cover;
+  background-position: center;
+  border-radius: 14px;
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+    0 0 60px var(--presence-accent);
+  z-index: 2;
+  animation: presence-cover-breathe 4s ease-in-out infinite;
+}
+
+@keyframes presence-cover-breathe {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50%      { transform: translate(-50%, -50%) scale(1.025); }
+}
+
+/* Gradient vignette for legibility of overlaid text */
+.presence-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background:
+    linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, transparent 25%, transparent 55%, rgba(0,0,0,0.85) 100%);
+  pointer-events: none;
+}
+
+/* === Top row: brand chip + volume === */
+.presence-top-row {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  right: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.presence-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px 5px 5px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.92);
+  max-width: 60%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.presence-brand img {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.presence-volume {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.2s, transform 0.2s;
+}
+.presence-card:hover .presence-volume,
+.presence-card:focus-within .presence-volume { opacity: 1; transform: translateY(0); }
+
+.presence-volume input[type=range] {
+  width: 70px;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+.presence-volume input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  background: white;
+  border: none;
+  cursor: pointer;
+}
+.presence-volume input[type=range]::-moz-range-thumb {
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  background: white;
+  border: none;
+  cursor: pointer;
+}
+
+/* === Now-playing info (subtitle) === */
+.presence-info {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 56px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.presence-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+}
+.presence-subtitle span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Animated equalizer bars */
+.presence-eq {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 14px;
+  flex-shrink: 0;
+}
+.presence-eq span {
+  display: block;
+  width: 3px;
+  background: var(--presence-accent);
+  border-radius: 1.5px;
+  animation: presence-eq 0.9s ease-in-out infinite;
+  box-shadow: 0 0 6px var(--presence-accent);
+}
+.presence-eq span:nth-child(1) { height: 60%; animation-delay: 0s; }
+.presence-eq span:nth-child(2) { height: 100%; animation-delay: 0.15s; }
+.presence-eq span:nth-child(3) { height: 45%; animation-delay: 0.3s; }
+@keyframes presence-eq {
+  0%, 100% { transform: scaleY(0.4); }
+  50%      { transform: scaleY(1); }
+}
+
+/* === Bottom controls bar === */
+.presence-controls {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.presence-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.88);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.presence-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+  transform: scale(1.08);
+}
+.presence-btn-primary {
+  background: var(--presence-accent);
+  color: black;
+}
+.presence-btn-primary:hover {
+  background: var(--presence-accent);
+  color: black;
+  filter: brightness(1.1);
+}
+.presence-btn-danger { color: #ff6b6b; }
+.presence-btn-danger:hover { background: rgba(255, 107, 107, 0.18); color: #ff8585; }
+
+/* Seek-style slider: progress fill + invisible range input on top */
+.presence-seek {
+  flex: 1;
+  position: relative;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  min-width: 0;
+}
+.presence-seek-track {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.presence-seek-fill {
+  height: 100%;
+  background: var(--presence-accent);
+  border-radius: 2px;
+  box-shadow: 0 0 8px var(--presence-accent);
+  transition: width 0.3s linear;
+}
+.presence-seek input[type=range] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0;
+}
+.presence-seek input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  background: white;
+}

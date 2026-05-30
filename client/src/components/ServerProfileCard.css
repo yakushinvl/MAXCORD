@@ -216,18 +216,26 @@
 
 .leave-server-btn {
     width: 100%;
-    padding: 10px;
-    background-color: transparent;
-    border: 1px solid #f23f43;
-    color: #f23f43;
-    border-radius: 4px;
-    font-size: 14px;
-    font-weight: 500;
+    padding: 12px 24px;
+    background: rgba(255, 59, 48, 0.1);
+    color: #ff3b30;
+    border: 1px solid rgba(255, 59, 48, 0.2);
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .leave-server-btn:hover {
-    background-color: #f23f43;
-    color: #fff;
+    background: rgba(255, 59, 48, 0.2);
+    border-color: #ff3b30;
+    box-shadow: 0 0 20px rgba(255, 59, 48, 0.2);
+    transform: translateY(-2px);
+}
+
+.leave-server-btn:active {
+    transform: translateY(0);
 }

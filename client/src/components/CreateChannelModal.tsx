@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
 import axios from 'axios';
-import { CloseIcon, HashtagIcon, SpeakerIcon } from './Icons';
+import { HashtagIcon, SpeakerIcon } from './Icons';
+import Modal from './Modal';
 import './CreateChannelModal.css';
 
 interface CreateChannelModalProps {
@@ -50,78 +50,79 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
     }
   };
 
-  if (!isOpen) return null;
+  return (
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      title="Создать канал"
+      size="md"
+      footer={
+        <>
+          <button type="button" onClick={onClose} className="zv-btn zv-btn--ghost">
+            Отмена
+          </button>
+          <button
+            type="submit"
+            form="create-channel-form"
+            className="zv-btn zv-btn--primary"
+            disabled={loading || !channelName.trim()}
+          >
+            {loading ? 'Создание...' : 'Создать канал'}
+          </button>
+        </>
+      }
+    >
+      <form id="create-channel-form" onSubmit={handleSubmit} className="create-channel-form">
+        {error && <div className="error-message">{error}</div>}
 
-  return createPortal(
-    <div className="create-channel-modal-overlay" onClick={onClose}>
-      <div className="create-channel-modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="create-channel-modal-header">
-          <h2>Создать канал</h2>
-          <button className="close-button" onClick={onClose}><CloseIcon /></button>
+        <div className="form-section">
+          <label htmlFor="channel-type">Тип канала</label>
+          <div className="channel-type-selector">
+            <button
+              type="button"
+              className={`type-button ${channelType === 'text' ? 'active' : ''}`}
+              onClick={() => setChannelType('text')}
+            >
+              <span className="type-icon"><HashtagIcon size={24} /></span>
+              <span>Текстовый</span>
+            </button>
+            <button
+              type="button"
+              className={`type-button ${channelType === 'voice' ? 'active' : ''}`}
+              onClick={() => setChannelType('voice')}
+            >
+              <span className="type-icon"><SpeakerIcon size={24} /></span>
+              <span>Голосовой</span>
+            </button>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="create-channel-form">
-          {error && <div className="error-message">{error}</div>}
-
-          <div className="form-section">
-            <label htmlFor="channel-type">Тип канала</label>
-            <div className="channel-type-selector">
-              <button
-                type="button"
-                className={`type-button ${channelType === 'text' ? 'active' : ''}`}
-                onClick={() => setChannelType('text')}
-              >
-                <span className="type-icon"><HashtagIcon size={24} /></span>
-                <span>Текстовый</span>
-              </button>
-              <button
-                type="button"
-                className={`type-button ${channelType === 'voice' ? 'active' : ''}`}
-                onClick={() => setChannelType('voice')}
-              >
-                <span className="type-icon"><SpeakerIcon size={24} /></span>
-                <span>Голосовой</span>
-              </button>
-            </div>
+        <div className="form-section">
+          <label htmlFor="channel-name">
+            {channelType === 'text' ? 'Название текстового канала' : 'Название голосового канала'}
+          </label>
+          <div className="input-wrapper">
+            {channelType === 'text' && <span className="input-prefix"><HashtagIcon size={20} /></span>}
+            {channelType === 'voice' && <span className="input-prefix"><SpeakerIcon size={20} /></span>}
+            <input
+              type="text"
+              id="channel-name"
+              value={channelName}
+              onChange={(e) => setChannelName(e.target.value)}
+              placeholder={channelType === 'text' ? 'например: общий' : 'например: общий голосовой'}
+              maxLength={32}
+              required
+              autoFocus
+            />
           </div>
-
-          <div className="form-section">
-            <label htmlFor="channel-name">
-              {channelType === 'text' ? 'Название текстового канала' : 'Название голосового канала'}
-            </label>
-            <div className="input-wrapper">
-              {channelType === 'text' && <span className="input-prefix"><HashtagIcon size={20} /></span>}
-              {channelType === 'voice' && <span className="input-prefix"><SpeakerIcon size={20} /></span>}
-              <input
-                type="text"
-                id="channel-name"
-                value={channelName}
-                onChange={(e) => setChannelName(e.target.value)}
-                placeholder={channelType === 'text' ? 'например: общий' : 'например: общий голосовой'}
-                maxLength={100}
-                required
-                autoFocus
-              />
-            </div>
-            <p className="input-hint">
-              {channelType === 'text'
-                ? 'Текстовые каналы используются для обмена сообщениями, файлами и изображениями.'
-                : 'Голосовые каналы используются для общения в реальном времени.'}
-            </p>
-          </div>
-
-          <div className="modal-buttons">
-            <button type="button" onClick={onClose} className="cancel-button">
-              Отмена
-            </button>
-            <button type="submit" className="create-button" disabled={loading || !channelName.trim()}>
-              {loading ? 'Создание...' : 'Создать канал'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>,
-    document.body
+          <p className="input-hint">
+            {channelType === 'text'
+              ? 'Текстовые каналы используются для обмена сообщениями, файлами и изображениями.'
+              : 'Голосовые каналы используются для общения в реальном времени.'}
+          </p>
+        </div>
+      </form>
+    </Modal>
   );
 };
 

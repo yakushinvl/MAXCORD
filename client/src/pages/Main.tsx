@@ -27,6 +27,15 @@ import JoinServerModal from '../components/JoinServerModal';
 import SettingsModal from '../components/SettingsModal';
 import Inbox from '../components/Inbox';
 import CreateGroupDMModal from '../components/CreateGroupDMModal';
+import VerificationWarning from '../components/VerificationWarning';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  sidebarSwapVariants,
+  contentSwapVariants,
+  innerKeyVariants,
+  iosSpring,
+  iosFade,
+} from '../animations/transitions';
 import './Main.css';
 
 const Main: React.FC = () => {
@@ -43,8 +52,6 @@ const Main: React.FC = () => {
   const [initialUnreadCount, setInitialUnreadCount] = useState(0);
   const [messages, setMessages] = useState<Message[]>([]);
   const [showFriends, setShowFriends] = useState(false);
-  const [showShowcase, setShowShowcase] = useState(false);
-  const [openMiniApps, setOpenMiniApps] = useState<MiniApp[]>([]);
   const [selectedDM, setSelectedDM] = useState<DirectMessage | null>(null);
   const [dmMessages, setDmMessages] = useState<Message[]>([]);
   const [dms, setDms] = useState<DirectMessage[]>([]);
@@ -52,6 +59,9 @@ const Main: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showInbox, setShowInbox] = useState(false);
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+  const [showShowcase, setShowShowcase] = useState(false);
+  const [openMiniApps, setOpenMiniApps] = useState<MiniApp[]>([]);
+  const [minimizedMiniAppIds, setMinimizedMiniAppIds] = useState<Set<string>>(new Set());
 
   const userRef = useRef(user);
   const selectedServerRef = useRef(selectedServer);
@@ -76,14 +86,44 @@ const Main: React.FC = () => {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [serverProfileServerId, setServerProfileServerId] = useState<string | null>(null);
-  const [sidebarWidth, setSidebarWidth] = useState(240);
-  const isResizingRef = useRef(false);
+  const SIDEBAR_WIDTH = 280;
   const hasViewInitializedRef = useRef(false);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [pinnedMessages, setPinnedMessages] = useState<Message[]>([]);
   const [mobileView, setMobileView] = useState<'sidebar' | 'content' | 'members'>('sidebar');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const touchStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isMobile) return;
+    const t = e.touches[0];
+    touchStartRef.current = { x: t.clientX, y: t.clientY, t: Date.now() };
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isMobile || !touchStartRef.current) return;
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    const end = e.changedTouches[0];
+    const dx = end.clientX - start.x;
+    const dy = end.clientY - start.y;
+    const dt = Date.now() - start.t;
+    if (dt > 500) return; // too slow
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return; // not horizontal enough
+    // Edge-only swipe to avoid hijacking interactive content
+    const edgeThreshold = 40;
+    const fromLeftEdge = start.x < edgeThreshold;
+    const fromRightEdge = start.x > window.innerWidth - edgeThreshold;
+    const order: Array<'sidebar' | 'content' | 'members'> = ['sidebar', 'content', 'members'];
+    const idx = order.indexOf(mobileView);
+    if (dx > 0 && (fromLeftEdge || mobileView !== 'content') && idx > 0) {
+      setMobileView(order[idx - 1]);
+    } else if (dx < 0 && (fromRightEdge || mobileView !== 'content') && idx < order.length - 1) {
+      // Only allow swipe to members if a server is selected
+      if (order[idx + 1] === 'members' && !selectedServer) return;
+      setMobileView(order[idx + 1]);
+    }
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -108,15 +148,6 @@ const Main: React.FC = () => {
   }, [selectedChannel]);
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizingRef.current) return;
-      const newWidth = e.clientX - 72;
-      if (newWidth > 200 && newWidth < 500) setSidebarWidth(newWidth);
-    };
-    const handleMouseUp = () => {
-      isResizingRef.current = false;
-      document.body.style.cursor = 'default';
-    };
     const handleStartDMEvent = (e: any) => {
       setSelectedDM(e.detail.dm);
       setSelectedChannel(null);
@@ -139,56 +170,77 @@ const Main: React.FC = () => {
         setMobileView('content');
       } catch (err) { }
     };
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    const handleOpenMiniAppEvent = (e: any) => {
+      handleOpenMiniApp(e.detail.app);
+    };
     window.addEventListener('start-dm', handleStartDMEvent);
     window.addEventListener('start-call', handleStartCallEvent);
     window.addEventListener('open-server-profile-settings', handleOpenServerProfileSettings);
     window.addEventListener('start-dm-by-id', handleStartDMById);
+    window.addEventListener('open-mini-app', handleOpenMiniAppEvent);
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('start-dm', handleStartDMEvent);
       window.removeEventListener('start-call', handleStartCallEvent);
       window.removeEventListener('open-server-profile-settings', handleOpenServerProfileSettings);
       window.removeEventListener('start-dm-by-id', handleStartDMById);
+      window.removeEventListener('open-mini-app', handleOpenMiniAppEvent);
     };
   }, []);
+
+  // --- Activity orchestration ---
+  // Game (from electron detection) has priority. If no game is running, fall
+  // back to the most-recently-opened mini-app. If neither, clear activity.
+  // Minimizing a mini-app does NOT clear activity — it keeps running.
+  const [currentGameActivity, setCurrentGameActivity] = useState<any>(null);
 
   useEffect(() => {
     // @ts-ignore
     const electron = window.electron;
     if (electron && socket && user) {
       electron.getCurrentActivity?.().then((activity: any) => {
-        if (activity) {
-          socket.emit('activity-update', {
-            name: activity.name,
-            type: 'playing',
-            assets: { largeImage: activity.icon },
-            timestamps: { start: activity.startTime }
-          });
-        }
+        if (activity) setCurrentGameActivity({
+          name: activity.name, type: 'playing',
+          assets: { largeImage: activity.icon },
+          timestamps: { start: activity.startTime },
+        });
       });
       const removeActivityListener = electron.onActivityChanged?.((activity: any) => {
         if (activity) {
-          socket.emit('activity-update', {
-            name: activity.name,
-            type: 'playing',
+          setCurrentGameActivity({
+            name: activity.name, type: 'playing',
             assets: { largeImage: activity.icon },
-            timestamps: { start: activity.startTime }
+            timestamps: { start: activity.startTime },
           });
         } else {
-          socket.emit('activity-update', null);
+          setCurrentGameActivity(null);
         }
       });
       return () => { if (removeActivityListener) removeActivityListener(); };
     }
   }, [socket, user?._id]);
 
-  const startResizing = () => {
-    isResizingRef.current = true;
-    document.body.style.cursor = 'col-resize';
-  };
+  // Single source of truth: emit activity based on current game + open mini-apps.
+  useEffect(() => {
+    if (!socket) return;
+    if (currentGameActivity) {
+      socket.emit('activity-update', currentGameActivity);
+      return;
+    }
+    if (openMiniApps.length > 0) {
+      const app = openMiniApps[openMiniApps.length - 1];
+      socket.emit('activity-update', {
+        name: app.name,
+        type: 'playing',
+        state: 'В приложении',
+        details: app.description ? app.description.slice(0, 100) : '',
+        assets: { largeImage: app.avatar || null, largeText: app.name },
+        timestamps: { start: Date.now() },
+        miniAppData: app,
+      });
+      return;
+    }
+    socket.emit('activity-update', null);
+  }, [socket, currentGameActivity, openMiniApps]);
 
   useEffect(() => {
     if (selectedChannel) {
@@ -216,29 +268,31 @@ const Main: React.FC = () => {
     try {
       const response = await axios.get('/api/servers/me');
       const serversData = response.data;
-      setServers(serversData);
+      if (Array.isArray(serversData)) {
+        setServers(serversData);
 
-      if (!hasViewInitializedRef.current && serversData.length > 0 && !selectedServerRef.current) {
-        hasViewInitializedRef.current = true;
+        if (!hasViewInitializedRef.current && serversData.length > 0 && !selectedServerRef.current) {
+          hasViewInitializedRef.current = true;
 
-        const lastServerId = localStorage.getItem('lastServerId');
-        const savedServer = lastServerId ? serversData.find((s: any) => s._id === lastServerId) : null;
-        const targetServer = savedServer || serversData[0];
+          const lastServerId = localStorage.getItem('lastServerId');
+          const savedServer = lastServerId ? serversData.find((s: any) => s._id === lastServerId) : null;
+          const targetServer = savedServer || serversData[0];
 
-        setSelectedServer(targetServer);
+          setSelectedServer(targetServer);
 
-        const lastChannelId = localStorage.getItem('lastChannelId');
-        const savedChannel = lastChannelId ? targetServer.channels.find((c: any) => c._id === lastChannelId) : null;
+          const lastChannelId = localStorage.getItem('lastChannelId');
+          const savedChannel = lastChannelId ? targetServer.channels.find((c: any) => c._id === lastChannelId) : null;
 
-        if (savedChannel) {
-          setSelectedChannel(savedChannel);
-        } else {
-          const firstTextChannel = targetServer.channels.find((c: any) => c.type === 'text');
-          if (firstTextChannel) setSelectedChannel(firstTextChannel);
-          else if (targetServer.channels.length > 0) setSelectedChannel(targetServer.channels[0]);
+          if (savedChannel) {
+            setSelectedChannel(savedChannel);
+          } else {
+            const firstTextChannel = targetServer.channels.find((c: any) => c.type === 'text');
+            if (firstTextChannel) setSelectedChannel(firstTextChannel);
+            else if (targetServer.channels.length > 0) setSelectedChannel(targetServer.channels[0]);
+          }
+        } else if (!hasViewInitializedRef.current) {
+          hasViewInitializedRef.current = true;
         }
-      } else if (!hasViewInitializedRef.current) {
-        hasViewInitializedRef.current = true;
       }
     } catch (error) { } finally { setLoading(false); }
   }, []);
@@ -246,7 +300,9 @@ const Main: React.FC = () => {
   const fetchDMs = useCallback(async () => {
     try {
       const response = await axios.get('/api/direct-messages');
-      setDms(response.data);
+      if (Array.isArray(response.data)) {
+        setDms(response.data);
+      }
     } catch (error) { }
   }, []);
 
@@ -422,6 +478,11 @@ const Main: React.FC = () => {
       setSelectedChannel((prev: Channel | null) => (prev && String((prev.server as any)?._id || prev.server) === data.serverId) ? null : prev);
     };
     const handleServerDeletedSocket = (data: { serverId: string }) => { handleServerDelete(data.serverId); };
+    const handleUserVerified = (data: { isVerified: boolean }) => {
+      if (userRef.current) {
+        updateUser({ ...userRef.current, isVerified: data.isVerified });
+      }
+    };
 
     socket.on('call-offer', handleCallOffer);
     socket.on('server-member-updated', handleServerMemberUpdate);
@@ -431,6 +492,7 @@ const Main: React.FC = () => {
     socket.on('server-member-left', handleServerMemberLeft);
     socket.on('server-kicked', handleServerKicked);
     socket.on('server-deleted', handleServerDeletedSocket);
+    socket.on('user-verified', handleUserVerified);
     return () => {
       socket.off('call-offer', handleCallOffer);
       socket.off('server-member-updated', handleServerMemberUpdate);
@@ -440,6 +502,7 @@ const Main: React.FC = () => {
       socket.off('server-member-left', handleServerMemberLeft);
       socket.off('server-kicked', handleServerKicked);
       socket.off('server-deleted', handleServerDeletedSocket);
+      socket.off('user-verified', handleUserVerified);
     };
   }, [socket, activeCall, user, updateUser, handleServerUpdate]);
 
@@ -583,26 +646,38 @@ const Main: React.FC = () => {
     if (selectedServer?._id === serverId) { setSelectedServer(null); setSelectedChannel(null); }
   };
 
-  const handleShowShowcase = () => {
-    setShowShowcase(true);
-    setShowFriends(false);
-    setSelectedServer(null);
-    setSelectedChannel(null);
-    setSelectedDM(null);
-    setMobileView('content');
-  };
+    const handleShowShowcase = () => {
+        setShowShowcase(true);
+        setShowFriends(false);
+        setSelectedServer(null);
+        setSelectedChannel(null);
+        setSelectedDM(null);
+        setMobileView('content');
+    };
 
-  const handleOpenMiniApp = (app: MiniApp) => {
-    if (!openMiniApps.find(a => a._id === app._id)) {
-      setOpenMiniApps([...openMiniApps, app]);
-    }
-  };
+    const handleOpenMiniApp = (app: MiniApp) => {
+        // If app already open but minimized — just restore it.
+        setMinimizedMiniAppIds(prev => { const n = new Set(prev); n.delete(app._id); return n; });
+        if (!openMiniApps.find(a => a._id === app._id)) {
+            setOpenMiniApps([...openMiniApps, app]);
+        }
+    };
 
-  const handleCloseMiniApp = (appId: string) => {
-    setOpenMiniApps(openMiniApps.filter(a => a._id !== appId));
-  };
+    const handleCloseMiniApp = (appId: string) => {
+        setOpenMiniApps(openMiniApps.filter(a => a._id !== appId));
+        setMinimizedMiniAppIds(prev => { const n = new Set(prev); n.delete(appId); return n; });
+        // Activity is recomputed by the centralized effect (game > miniapps > null).
+    };
 
-  const handleUserClick = (userId: string, event?: React.MouseEvent | CustomEvent) => {
+    const handleMinimizeMiniApp = (appId: string) => {
+        setMinimizedMiniAppIds(prev => new Set(prev).add(appId));
+    };
+
+    const handleRestoreMiniApp = (appId: string) => {
+        setMinimizedMiniAppIds(prev => { const n = new Set(prev); n.delete(appId); return n; });
+    };
+
+    const handleUserClick = (userId: string, event?: React.MouseEvent | CustomEvent) => {
     setShowProfileUserId(userId);
     if (event) {
       if ('clientX' in event) {
@@ -627,12 +702,16 @@ const Main: React.FC = () => {
   if (loading) return <div className="loading">Загрузка...</div>;
 
   return (
-    <div className={`main-container ${isMobile ? 'is-mobile' : ''} view-${mobileView}`}>
+    <div
+      className={`main-container ${isMobile ? 'is-mobile' : ''} view-${mobileView}`}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       {( (!isMobile || mobileView === 'sidebar') ) && (
         <Sidebar
           user={user!} servers={servers} unreadCounts={unreadCounts} selectedServer={selectedServer}
           onServerSelect={(server) => {
-            setSelectedServer(server); setShowFriends(false); setShowShowcase(false); setSelectedDM(null);
+              setSelectedServer(server); setShowFriends(false); setShowShowcase(false); setSelectedDM(null);
             const firstTextChannel = server.channels.find(c => c.type === 'text');
             if (firstTextChannel) {
               setMessages([]);
@@ -654,139 +733,249 @@ const Main: React.FC = () => {
           onOpenProfile={handleUserClick}
           onToggleInbox={() => setShowInbox(!showInbox)}
           inboxUnreadCount={inboxUnreadCount}
+          minimizedMiniApps={openMiniApps.filter(a => minimizedMiniAppIds.has(a._id))}
+          onRestoreMiniApp={handleRestoreMiniApp}
+          onCloseMiniApp={handleCloseMiniApp}
         />
       )}
 
       {/* --- SECOND SIDEBAR AREA --- */}
-      {selectedServer && !showFriends && !showShowcase ? (
-        ((!isMobile || mobileView === 'sidebar')) && (
-          <div className="secondary-sidebar-container" style={{ width: isMobile ? '100%' : sidebarWidth + 1 }}>
-            <ServerSidebar
-              server={selectedServer}
-              selectedChannel={selectedChannel}
-              unreadCounts={unreadCounts}
-              onChannelSelect={handleChannelSelect}
-              onChannelCreated={fetchServers}
-              onUserClick={handleUserClick}
-              onOpenSettings={() => setShowServerSettings(true)}
-              onServerClick={handleServerProfileClick}
-              style={{ width: isMobile ? '100%' : sidebarWidth }}
-            />
-            {!isMobile && <div className="sidebar-resizer" onMouseDown={startResizing} />}
-          </div>
-        )
-      ) : !selectedServer && !showShowcase ? (
-        ((!isMobile || mobileView === 'sidebar')) && (
-          <div className="secondary-sidebar-container" style={{ width: isMobile ? '100%' : sidebarWidth + 1 }}>
-            <DMSidebar
-              dms={dms}
-              selectedDM={selectedDM}
-              onDMSelect={(dm) => {
-                setSelectedDM(dm);
-                setShowFriends(false);
-                setShowShowcase(false);
-                setSelectedServer(null);
-                setMobileView('content');
-              }}
-              onShowFriends={() => {
-                setShowFriends(true);
-                setShowShowcase(false);
-                setSelectedDM(null);
-                setMobileView(isMobile ? 'content' : 'sidebar');
-              }}
-              onAddDM={() => setShowCreateGroupModal(true)}
-              showFriends={showFriends}
-              currentUser={user!}
-              unreadCounts={unreadCounts}
-              style={{ width: isMobile ? '100%' : sidebarWidth }}
-            />
-            {!isMobile && <div className="sidebar-resizer" onMouseDown={startResizing} />}
-          </div>
-        )
-      ) : null}
+      {(() => {
+        // Derive which secondary sidebar (if any) to render. Server sidebar wins when
+        // a server is selected and we're not on the friends panel; otherwise DMSidebar.
+        const sidebarKind: 'server' | 'dm' | null =
+          selectedServer && !showFriends ? 'server'
+          : (!selectedServer && !showShowcase) ? 'dm'
+          : null;
+        if (!(!isMobile || mobileView === 'sidebar')) return null;
+        // Direction: server sidebar slides in from the right, DM sidebar from the left.
+        const dir = sidebarKind === 'server' ? 1 : -1;
+        return (
+          <AnimatePresence mode="wait" initial={false} custom={dir}>
+            {sidebarKind === 'server' && (
+              <motion.div
+                key="server-sidebar"
+                className="secondary-sidebar-container"
+                style={{ width: isMobile ? '100%' : SIDEBAR_WIDTH }}
+                custom={dir}
+                variants={sidebarSwapVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={iosSpring}
+              >
+                <ServerSidebar
+                  server={selectedServer!}
+                  selectedChannel={selectedChannel}
+                  unreadCounts={unreadCounts}
+                  onChannelSelect={handleChannelSelect}
+                  onChannelCreated={fetchServers}
+                  onUserClick={handleUserClick}
+                  onOpenSettings={() => setShowServerSettings(true)}
+                  onServerClick={handleServerProfileClick}
+                  style={{ width: isMobile ? '100%' : SIDEBAR_WIDTH }}
+                />
+              </motion.div>
+            )}
+            {sidebarKind === 'dm' && (
+              <motion.div
+                key="dm-sidebar"
+                className="secondary-sidebar-container"
+                style={{ width: isMobile ? '100%' : SIDEBAR_WIDTH }}
+                custom={dir}
+                variants={sidebarSwapVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={iosSpring}
+              >
+                <DMSidebar
+                  dms={dms}
+                  selectedDM={selectedDM}
+                  onDMSelect={(dm) => {
+                    setSelectedDM(dm);
+                    setShowFriends(false);
+                      setShowShowcase(false);
+                      setSelectedServer(null);
+                    setMobileView('content');
+                  }}
+                  onShowFriends={() => {
+                    setShowFriends(true);
+                      setShowShowcase(false);
+                      setSelectedDM(null);
+                    setMobileView(isMobile ? 'content' : 'sidebar');
+                  }}
+                  onAddDM={() => setShowCreateGroupModal(true)}
+                  showFriends={showFriends}
+                  currentUser={user!}
+                  unreadCounts={unreadCounts}
+                  style={{ width: isMobile ? '100%' : SIDEBAR_WIDTH }}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        );
+      })()}
 
       {/* --- CONTENT AREA --- */}
       {((!isMobile || mobileView === 'content')) && (
         <div className="main-content-area">
-          {showFriends && (
-            <FriendsPanel
-              friends={friends}
-              setFriends={setFriends}
-              onStartDM={handleStartDM}
-              onUserClick={handleUserClick}
-              unreadCounts={unreadCounts}
-              onBack={() => setMobileView('sidebar')}
-              isMobile={isMobile}
-            />
-          )}
+          <VerificationWarning onOpenSettings={() => setShowSettingsModal(true)} />
+          {(() => {
+            // Mutually-exclusive content swap. Outer key drives section change;
+            // inner AnimatePresence inside Channel/DM blocks animates id swap separately.
+            const contentKey: string | null = showShowcase ? 'showcase'
+              : showFriends ? 'friends'
+              : selectedChannel ? `channel-${selectedChannel.type}`
+              : selectedDM ? 'dm'
+              : !selectedServer ? 'empty-welcome'
+              : null;
 
-          {showShowcase && (
-            <ShowcaseView
-              onOpenMiniApp={handleOpenMiniApp}
-              onBack={() => setMobileView('sidebar')}
-              isMobile={isMobile}
-              friends={friends}
-              onUserClick={handleUserClick}
-            />
-          )}
+            return (
+              <AnimatePresence mode="wait" initial={false}>
+                {contentKey === 'showcase' && (
+                  <motion.div
+                    key="showcase"
+                    className="content-swap-layer"
+                    variants={contentSwapVariants}
+                    initial="initial" animate="animate" exit="exit"
+                    transition={iosSpring}
+                  >
+                    <ShowcaseView
+                      onOpenMiniApp={handleOpenMiniApp}
+                      onBack={() => setMobileView('sidebar')}
+                      isMobile={isMobile}
+                      friends={friends}
+                      onUserClick={handleUserClick}
+                    />
+                  </motion.div>
+                )}
 
-          {selectedChannel && !showFriends && !showShowcase && (!isMobile || mobileView === 'content') && (
-            selectedChannel.type === 'text' ? (
-              <ChannelView
-                key={selectedChannel._id}
-                channel={selectedChannel}
-                server={selectedServer!}
-                messages={messages}
-                socket={socket}
-                onUserClick={handleUserClick}
-                initialUnreadCount={unreadCounts[selectedChannel._id]}
-                hasMore={hasMore}
-                isLoadingMore={isLoadingMore}
-                onLoadMore={loadMoreMessages}
-                pinnedMessages={pinnedMessages}
-                setMessages={setMessages}
-                onBack={() => setMobileView('sidebar')}
-                onToggleMembers={() => setMobileView((prev: string) => prev === 'members' ? 'content' : 'members')}
-                isMobile={isMobile}
-              />
-            ) : (
-              <VoiceChannelView
-                channel={selectedChannel}
-                server={selectedServer!}
-                onUserClick={handleUserClick}
-                onMessageClick={handleStartDM}
-                onCallClick={async (userId) => {
-                  try {
-                    const response = await axios.get(`/api/direct-messages/user/${userId}`);
-                    const other = response.data.participants.find((p: User) => p._id !== user?._id);
-                    if (other) handleStartDirectCall(other, response.data._id);
-                  } catch (e) { }
-                }}
-                onBack={() => setMobileView('sidebar')}
-                isMobile={isMobile}
-              />
-            )
-          )}
+                {contentKey === 'friends' && (
+                  <motion.div
+                    key="friends"
+                    className="content-swap-layer"
+                    variants={contentSwapVariants}
+                    initial="initial" animate="animate" exit="exit"
+                    transition={iosSpring}
+                  >
+                    <FriendsPanel
+                      friends={friends}
+                      setFriends={setFriends}
+                      onStartDM={handleStartDM}
+                      onUserClick={handleUserClick}
+                      unreadCounts={unreadCounts}
+                      onBack={() => setMobileView('sidebar')}
+                      isMobile={isMobile}
+                    />
+                  </motion.div>
+                )}
 
-          {(!isMobile || mobileView === 'content') && selectedDM && !showFriends && (
-            <DMView
-              key={selectedDM._id}
-              dm={selectedDM}
-              messages={dmMessages}
-              socket={socket}
-              onClose={() => { setSelectedDM(null); setShowFriends(true); setMobileView('sidebar'); }}
-              onStartCall={handleStartDirectCall}
-              onStartGroupCall={handleStartGroupCall}
-              onUserClick={handleUserClick}
-              initialUnreadCount={unreadCounts[selectedDM._id]}
-              hasMore={hasMore}
-              isLoadingMore={isLoadingMore}
-              onLoadMore={loadMoreDMMessages}
-              pinnedMessages={pinnedMessages.filter(m => m.directMessage === selectedDM._id)}
-              setMessages={setDmMessages}
-              onBack={() => setMobileView('sidebar')}
-            />
-          )}
+                {contentKey === 'channel-text' && selectedChannel && (
+                  <motion.div
+                    key="channel-text"
+                    className="content-swap-layer"
+                    variants={contentSwapVariants}
+                    initial="initial" animate="animate" exit="exit"
+                    transition={iosSpring}
+                  >
+                    {/* Plain remount on channel-id change — no inner exit animation.
+                        VoiceChannelView portals its controls to #voice-controls-portal,
+                        and a delayed unmount made those buttons linger across channel
+                        switches. */}
+                    <div key={selectedChannel._id} className="content-inner-layer">
+                      <ChannelView
+                        channel={selectedChannel}
+                        server={selectedServer!}
+                        messages={messages}
+                        socket={socket}
+                        onUserClick={handleUserClick}
+                        initialUnreadCount={unreadCounts[selectedChannel._id]}
+                        hasMore={hasMore}
+                        isLoadingMore={isLoadingMore}
+                        onLoadMore={loadMoreMessages}
+                        pinnedMessages={pinnedMessages}
+                        setMessages={setMessages}
+                        onBack={() => setMobileView('sidebar')}
+                        onToggleMembers={() => setMobileView((prev: string) => prev === 'members' ? 'content' : 'members')}
+                        isMobile={isMobile}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
+                {contentKey === 'channel-voice' && selectedChannel && (
+                  <motion.div
+                    key="channel-voice"
+                    className="content-swap-layer"
+                    variants={contentSwapVariants}
+                    initial="initial" animate="animate" exit="exit"
+                    transition={iosSpring}
+                  >
+                    <div key={selectedChannel._id} className="content-inner-layer">
+                      <VoiceChannelView
+                        channel={selectedChannel}
+                        server={selectedServer!}
+                        onUserClick={handleUserClick}
+                        onMessageClick={handleStartDM}
+                        onCallClick={async (userId) => {
+                          try {
+                            const response = await axios.get(`/api/direct-messages/user/${userId}`);
+                            const other = response.data.participants.find((p: User) => p._id !== user?._id);
+                            if (other) handleStartDirectCall(other, response.data._id);
+                          } catch (e) { }
+                        }}
+                        onBack={() => setMobileView('sidebar')}
+                        isMobile={isMobile}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
+                {contentKey === 'dm' && selectedDM && (
+                  <motion.div
+                    key="dm"
+                    className="content-swap-layer"
+                    variants={contentSwapVariants}
+                    initial="initial" animate="animate" exit="exit"
+                    transition={iosSpring}
+                  >
+                    <div key={selectedDM._id} className="content-inner-layer">
+                      <DMView
+                        dm={selectedDM}
+                        messages={dmMessages}
+                        socket={socket}
+                        onClose={() => { setSelectedDM(null); setShowFriends(true); setMobileView('sidebar'); }}
+                        onStartCall={handleStartDirectCall}
+                        onStartGroupCall={handleStartGroupCall}
+                        onUserClick={handleUserClick}
+                        initialUnreadCount={unreadCounts[selectedDM._id]}
+                        hasMore={hasMore}
+                        isLoadingMore={isLoadingMore}
+                        onLoadMore={loadMoreDMMessages}
+                        pinnedMessages={pinnedMessages.filter(m => m.directMessage === selectedDM._id)}
+                        setMessages={setDmMessages}
+                        onBack={() => setMobileView('sidebar')}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
+                {contentKey === 'empty-welcome' && (
+                  <motion.div
+                    key="empty-welcome"
+                    className="content-swap-layer empty-view"
+                    variants={contentSwapVariants}
+                    initial="initial" animate="animate" exit="exit"
+                    transition={iosSpring}
+                  >
+                    <h2>Добро пожаловать в MAXCORD!</h2>
+                    <p>Выберите друга или сервер, чтобы начать общение</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            );
+          })()}
 
           {selectedServer && !showFriends && ((!isMobile || mobileView === 'members')) && (
             <div className={`members-sidebar-wrapper ${isMobile ? 'is-mobile' : ''}`}>
@@ -798,28 +987,24 @@ const Main: React.FC = () => {
               />
             </div>
           )}
-
-          {!selectedChannel && !selectedDM && !showFriends && !showShowcase && !selectedServer && (
-            <div className="empty-view">
-              <h2>Добро пожаловать в MAXCORD!</h2>
-              <p>Выберите друга или сервер, чтобы начать общение</p>
-            </div>
-          )}
         </div>
       )}
 
-      {activeCall && (
-        <VoiceCall
-          socket={socket}
-          otherUser={activeCall.user}
-          dmId={activeCall.dmId}
-          isGroup={activeCall.isGroup}
-          dmName={activeCall.dmName}
-          initialIncomingCall={activeCall.isIncoming}
-          initialOffer={activeCall.offer}
-          onEndCall={() => setActiveCall(null)}
-        />
-      )}
+      <AnimatePresence>
+        {activeCall && (
+          <VoiceCall
+            key="voice-call"
+            socket={socket}
+            otherUser={activeCall.user}
+            dmId={activeCall.dmId}
+            isGroup={activeCall.isGroup}
+            dmName={activeCall.dmName}
+            initialIncomingCall={activeCall.isIncoming}
+            initialOffer={activeCall.offer}
+            onEndCall={() => setActiveCall(null)}
+          />
+        )}
+      </AnimatePresence>
 
       {showProfileUserId && (
         <UserProfileCard
@@ -859,12 +1044,10 @@ const Main: React.FC = () => {
         />
       )}
 
-      {showSettingsModal && (
-        <SettingsModal
-          isOpen={showSettingsModal}
-          onClose={() => setShowSettingsModal(false)}
-        />
-      )}
+      <SettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+      />
 
       {showCreateGroupModal && (
         <CreateGroupDMModal
@@ -882,42 +1065,55 @@ const Main: React.FC = () => {
         />
       )}
 
-      {showInbox && (
-        <>
-          <div className="inbox-backdrop" onClick={() => setShowInbox(false)} />
-          <Inbox
-            onClose={() => setShowInbox(false)}
-            onItemClick={(item) => {
-              if (item.type === 'mention' || item.type === 'dm') {
-                if (item.link?.dmId) {
-                  window.dispatchEvent(new CustomEvent('start-dm-by-id', { detail: { dmId: item.link.dmId } }));
-                } else if (item.link?.channelId) {
-                  const server = servers.find(s => s.channels.some(c => c._id === item.link?.channelId));
-                  if (server) {
-                    setSelectedServer(server);
-                    const channel = server.channels.find(c => c._id === item.link?.channelId);
-                    if (channel) setSelectedChannel(channel);
-                    setShowFriends(false);
-                    setSelectedDM(null);
+      <AnimatePresence>
+        {showInbox && (
+          <React.Fragment key="inbox-stack">
+            <motion.div
+              key="inbox-backdrop"
+              className="inbox-backdrop"
+              onClick={() => setShowInbox(false)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+            />
+            <Inbox
+              key="inbox"
+              onClose={() => setShowInbox(false)}
+              onItemClick={(item) => {
+                if (item.type === 'mention' || item.type === 'dm') {
+                  if (item.link?.dmId) {
+                    window.dispatchEvent(new CustomEvent('start-dm-by-id', { detail: { dmId: item.link.dmId } }));
+                  } else if (item.link?.channelId) {
+                    const server = servers.find(s => s.channels.some(c => c._id === item.link?.channelId));
+                    if (server) {
+                      setSelectedServer(server);
+                      const channel = server.channels.find(c => c._id === item.link?.channelId);
+                      if (channel) setSelectedChannel(channel);
+                      setShowFriends(false);
+                      setSelectedDM(null);
+                    }
                   }
+                } else if (item.type === 'friend_request') {
+                  setShowFriends(true);
+                  setSelectedServer(null);
+                  setSelectedChannel(null);
+                  setSelectedDM(null);
                 }
-              } else if (item.type === 'friend_request') {
-                setShowFriends(true);
-                setSelectedServer(null);
-                setSelectedChannel(null);
-                setSelectedDM(null);
-              }
-              setShowInbox(false);
-            }}
-          />
-        </>
-      )}
+                setShowInbox(false);
+              }}
+            />
+          </React.Fragment>
+        )}
+      </AnimatePresence>
       <div id="voice-controls-portal" />
 
-      <MiniAppContainer
-        openApps={openMiniApps}
-        onClose={handleCloseMiniApp}
-      />
+        <MiniAppContainer
+            openApps={openMiniApps}
+            minimizedIds={minimizedMiniAppIds}
+            onClose={handleCloseMiniApp}
+            onMinimize={handleMinimizeMiniApp}
+        />
     </div>
   );
 };

@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { User, Role } from '../types';
 import { getAvatarUrl } from '../utils/avatar';
 import UserBadges from './UserBadges';
+import { popoverVariants, popoverTransition } from '../animations/transitions';
 import './MentionAutocomplete.css';
 
 interface MentionAutocompleteProps {
@@ -54,7 +56,15 @@ const MentionAutocomplete: React.FC<MentionAutocompleteProps> = ({ query, items,
     if (filteredItems.length === 0) return null;
 
     return (
-        <div className="mention-autocomplete" ref={scrollRef}>
+        <motion.div
+            className="mention-autocomplete"
+            ref={scrollRef}
+            variants={popoverVariants}
+            initial="initial"
+            animate="animate"
+            transition={popoverTransition}
+            style={{ transformOrigin: 'bottom left' }}
+        >
             <div className="mention-autocomplete-header">
                 {query ? `Поиск: ${query}` : 'Упомянуть...'}
             </div>
@@ -91,7 +101,7 @@ const MentionAutocomplete: React.FC<MentionAutocompleteProps> = ({ query, items,
                     );
                 })}
             </div>
-        </div>
+        </motion.div>
     );
 };
 

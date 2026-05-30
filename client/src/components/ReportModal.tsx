@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Modal from './Modal';
 import './ReportModal.css';
 
 interface ReportModalProps {
@@ -65,62 +66,64 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, onSubmit, us
   const [reason, setReason] = useState('harassment');
   const [description, setDescription] = useState('');
 
-  if (!isOpen) return null;
-
   return (
-    <div className="report-modal-overlay" onClick={onClose}>
-      <div className="report-modal-content" onClick={e => e.stopPropagation()}>
-        <div className="report-modal-header">
-          <h2>Жалоба на {username}</h2>
-          <button className="close-btn" onClick={onClose}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      title={`Жалоба на ${username}`}
+      size="lg"
+      footer={
+        <>
+          <button className="zv-btn zv-btn--ghost" onClick={onClose}>Отмена</button>
+          <button
+            className="zv-btn zv-btn--danger"
+            onClick={() => onSubmit({ reason, description })}
+          >
+            Отправить
           </button>
-        </div>
-        
-        <div className="report-modal-body">
-          <div className="form-group">
-            <label>Укажите причину</label>
-            <div className="reason-grid">
-              {REASONS.map((opt) => (
-                <div 
-                  key={opt.id} 
-                  className={`reason-option ${reason === opt.id ? 'selected' : ''}`}
-                  onClick={() => setReason(opt.id)}
-                >
-                  <div className="reason-icon">{opt.icon}</div>
-                  <div className="reason-text">
-                    <span className="reason-title">{opt.title}</span>
-                    <span className="reason-desc">{opt.desc}</span>
-                  </div>
-                  {reason === opt.id && (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="9 18 15 12 9 6"/>
-                    </svg>
-                  )}
+        </>
+      }
+    >
+      {/* Wrap in .report-modal-body so the existing ReportModal.css selectors
+          (.report-modal-body .form-group, .report-modal-body textarea, …) apply.
+          When this modal was refactored onto the shared <Modal>, the wrapper div
+          was lost and the textarea/labels rendered unstyled. */}
+      <div className="report-modal-body">
+        <div className="form-group">
+          <label>Укажите причину</label>
+          <div className="reason-grid">
+            {REASONS.map((opt) => (
+              <div
+                key={opt.id}
+                className={`reason-option ${reason === opt.id ? 'selected' : ''}`}
+                onClick={() => setReason(opt.id)}
+              >
+                <div className="reason-icon">{opt.icon}</div>
+                <div className="reason-text">
+                  <span className="reason-title">{opt.title}</span>
+                  <span className="reason-desc">{opt.desc}</span>
                 </div>
-              ))}
-            </div>
-          </div>
-          
-          <div className="form-group">
-            <label>Дополнительное описание</label>
-            <textarea 
-              value={description} 
-              onChange={e => setDescription(e.target.value)} 
-              placeholder="Если есть важные детали, укажите их здесь..."
-              maxLength={1000}
-            />
+                {reason === opt.id && (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary-neon)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                )}
+              </div>
+            ))}
           </div>
         </div>
-        
-        <div className="report-modal-footer">
-          <button className="cancel-btn" onClick={onClose}>Отмена</button>
-          <button className="submit-btn" onClick={() => onSubmit({ reason, description })}>Отправить</button>
+
+        <div className="form-group">
+          <label>Дополнительное описание</label>
+          <textarea
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            placeholder="Если есть важные детали, укажите их здесь..."
+            maxLength={1000}
+          />
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };
 

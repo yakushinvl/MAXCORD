@@ -33,6 +33,20 @@ const miniAppSchema = new mongoose.Schema({
     maxlength: 500,
     default: ''
   },
+  isSystem: {
+    type: Boolean,
+    default: false
+  },
+  moderationStatus: {
+    type: String,
+    enum: ['draft', 'pending', 'approved', 'rejected'],
+    default: 'draft'
+  },
+  moderationReason: { type: String, default: null },
+  moderatedAt: { type: Date, default: null },
+  moderatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  isBlocked: { type: Boolean, default: false },
+  blockReason: { type: String, default: null },
   createdAt: {
     type: Date,
     default: Date.now

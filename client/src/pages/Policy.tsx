@@ -149,6 +149,10 @@ const Policy: React.FC = () => {
                             Если у вас есть вопросы по поводу этой политики или ваших данных, пожалуйста, свяжитесь с нашей командой поддержки:
                             <div style={{ marginTop: '24px', display: 'flex', gap: '32px' }}>
                                 <div>
+                                    <span style={{ display: 'block', color: 'rgba(255,255,255,0.4)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase' }}>Email Поддержки</span>
+                                    <a href="mailto:support@maxcord.fun" style={{ color: 'var(--primary-neon)', textDecoration: 'none', fontWeight: 700 }}>support@maxcord.fun</a>
+                                </div>
+                                <div>
                                     <span style={{ display: 'block', color: 'rgba(255,255,255,0.4)', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase' }}>Администрация</span>
                                     <span style={{ color: '#fff', fontWeight: 700 }}>@da1lu</span>
                                 </div>

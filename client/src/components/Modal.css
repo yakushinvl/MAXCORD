@@ -1,0 +1,173 @@
+/* --- SHARED LIQUID GLASS MODAL --- */
+/* Use the <Modal> React component for new modals to inherit consistent UX. */
+
+.zv-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(15px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5000;
+  padding: var(--space-4);
+}
+
+.zv-modal {
+  background: rgba(20, 20, 30, 0.75);
+  backdrop-filter: blur(40px) saturate(180%);
+  width: 100%;
+  max-width: 480px;
+  max-height: calc(100vh - 80px);
+  border-radius: var(--radius-2xl);
+  box-shadow:
+    0 30px 60px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--glass-border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.zv-modal--sm { max-width: 380px; }
+.zv-modal--md { max-width: 480px; }
+.zv-modal--lg { max-width: 640px; }
+.zv-modal--xl { max-width: 880px; }
+
+.zv-modal__header {
+  padding: var(--space-6) var(--space-6) var(--space-4);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-shrink: 0;
+}
+
+.zv-modal__title {
+  color: var(--text-main);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+
+.zv-modal__subtitle {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin-top: var(--space-1);
+}
+
+.zv-modal__close {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+  color: var(--text-dim);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.zv-modal__close:hover {
+  background: rgba(255, 59, 48, 0.18);
+  color: #ff3b30;
+  border-color: rgba(255, 59, 48, 0.3);
+  transform: rotate(90deg);
+}
+
+.zv-modal__close:active {
+  transform: rotate(90deg) scale(0.92);
+}
+
+.zv-modal__body {
+  padding: 0 var(--space-6) var(--space-6);
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.zv-modal__footer {
+  padding: var(--space-4) var(--space-6);
+  background: rgba(255, 255, 255, 0.03);
+  border-top: 1px solid var(--glass-border);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+.zv-modal__footer--start { justify-content: flex-start; }
+.zv-modal__footer--between { justify-content: space-between; }
+
+@keyframes zvModalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes zvModalScaleIn {
+  from {
+    transform: scale(0.94) translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* --- BUTTON PRIMITIVES FOR MODAL ACTIONS --- */
+.zv-btn {
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: var(--fast-transition);
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.zv-btn--ghost {
+  background: transparent;
+  color: var(--text-dim);
+}
+.zv-btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+}
+
+.zv-btn--primary {
+  background: var(--primary-neon);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0, 106, 255, 0.35);
+}
+.zv-btn--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 106, 255, 0.5);
+}
+.zv-btn--primary:active { transform: translateY(0); }
+.zv-btn--primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.zv-btn--danger {
+  background: var(--danger);
+  color: #fff;
+}
+.zv-btn--danger:hover {
+  filter: brightness(1.1);
+}

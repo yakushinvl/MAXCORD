@@ -28,6 +28,8 @@ const userSchema = new mongoose.Schema({
   verificationToken: String,
   verificationCode: String,
   verificationCodeExpires: Date,
+  twoFactorCode: String,
+  twoFactorCodeExpires: Date,
   resetPasswordCode: String,
   resetPasswordExpires: Date,
   tempEmail: String,
@@ -87,7 +89,8 @@ const userSchema = new mongoose.Schema({
       largeText: String,
       smallImage: String,
       smallText: String
-    }
+    },
+    miniAppData: { type: mongoose.Schema.Types.Mixed, default: null }
   },
   isBot: {
     type: Boolean,
@@ -97,6 +100,17 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  /** For bot accounts: status of marketplace publication review. */
+  botModerationStatus: {
+    type: String,
+    enum: ['draft', 'pending', 'approved', 'rejected'],
+    default: 'draft'
+  },
+  botModerationReason: { type: String, default: null },
+  botModeratedAt: { type: Date, default: null },
+  botModeratedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  botIsBlocked: { type: Boolean, default: false },
+  botBlockReason: { type: String, default: null },
   botToken: {
     type: String,
     unique: true,
@@ -113,7 +127,7 @@ const userSchema = new mongoose.Schema({
   },
   is2FAEnabled: {
     type: Boolean,
-    default: true
+    default: false
   },
   role: {
     type: String,

@@ -2,6 +2,7 @@ import React from 'react';
 import { User } from '../types';
 import UserAvatar from './UserAvatar';
 import { getFullUrl } from '../utils/avatar';
+import './panel-hero.css';
 import './ActiveContacts.css';
 
 interface ActiveContactsProps {
@@ -15,7 +16,12 @@ const ActiveContacts: React.FC<ActiveContactsProps> = ({ friends, onUserClick })
 
     if (activeFriends.length === 0) {
         return (
-            <div className="active-contacts-sidebar empty">
+            <div className="active-contacts-sidebar panel-hero empty">
+                <div className="panel-hero-bg" aria-hidden="true">
+                    <div className="blob cyan" />
+                    <div className="blob purple" />
+                    <div className="blob pink" />
+                </div>
                 <h3 className="section-title">Активные контакты</h3>
                 <div className="empty-active-state">
                     <div className="empty-active-icon">
@@ -44,7 +50,12 @@ const ActiveContacts: React.FC<ActiveContactsProps> = ({ friends, onUserClick })
     };
 
     return (
-        <div className="active-contacts-sidebar">
+        <div className="active-contacts-sidebar panel-hero">
+            <div className="panel-hero-bg" aria-hidden="true">
+                <div className="blob cyan" />
+                <div className="blob purple" />
+                <div className="blob pink" />
+            </div>
             <h3 className="section-title">Активные контакты</h3>
             <div className="active-contacts-list custom-scrollbar">
                 {activeFriends.map(friend => (

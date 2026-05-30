@@ -1,0 +1,125 @@
+/* Shared "hero glass panel" background — used by FriendsPanel and now by the
+   secondary sidebars (ServerSidebar, DMSidebar) and ServerMembers, so every
+   container reads the same way as the friends screen. Applied by adding the
+   `.panel-hero` class to a position:relative container; the decorative layers
+   go inside as the first child <div class="panel-hero-bg" aria-hidden> with
+   the blob/wave/orb children. */
+
+.panel-hero {
+  position: relative;
+  overflow: hidden;
+  /* Light overlay so the user's custom background (if any) reads through.
+     Matches the FriendsPanel look. Don't add backdrop-filter here — the
+     gradient alone is enough; doubling it with blur makes the panel opaque. */
+  background: linear-gradient(180deg, rgba(8, 8, 14, 0.45), rgba(4, 4, 10, 0.65));
+}
+
+.panel-hero-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* z-index: -1 keeps the decorative layer above the parent's own background
+     but below all other children — without forcing children into a relative
+     position (which previously broke `.pins-overlay`, dialogs anchored with
+     position:absolute, etc.). */
+  z-index: -1;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.panel-hero-bg .blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.35;
+  will-change: transform;
+  animation: panelHeroBlobFloat 28s ease-in-out infinite;
+}
+.panel-hero-bg .blob.cyan {
+  width: 320px; height: 320px; top: -12%; left: -12%;
+  background: radial-gradient(circle, rgba(0, 242, 255, 0.65), transparent 65%);
+}
+.panel-hero-bg .blob.purple {
+  width: 360px; height: 360px; bottom: -15%; right: -12%;
+  background: radial-gradient(circle, rgba(112, 0, 255, 0.65), transparent 65%);
+  animation-delay: -9s; animation-duration: 32s;
+}
+.panel-hero-bg .blob.pink {
+  width: 220px; height: 220px; top: 40%; right: 30%;
+  background: radial-gradient(circle, rgba(255, 0, 200, 0.35), transparent 65%);
+  animation-delay: -16s; animation-duration: 36s;
+}
+
+@keyframes panelHeroBlobFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(40px, -30px) scale(1.08); }
+  66%      { transform: translate(-30px, 40px) scale(0.95); }
+}
+
+/* Optional faint orb — pass `.panel-hero-bg--with-orb` */
+.panel-hero-bg .orb {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 240px;
+  height: 240px;
+  transform: translate(-50%, -50%);
+  opacity: 0.35;
+  pointer-events: none;
+}
+.panel-hero-bg .orb-ring {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  animation: panelHeroOrbRotate 50s linear infinite;
+}
+.panel-hero-bg .orb-ring::before {
+  content: '';
+  position: absolute;
+  inset: 20px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 242, 255, 0.08);
+}
+.panel-hero-bg .orb-core {
+  position: absolute; top: 50%; left: 50%;
+  width: 120px; height: 120px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.45), transparent 35%),
+    radial-gradient(circle at 70% 70%, rgba(112, 0, 255, 0.4), transparent 50%),
+    radial-gradient(circle at 30% 75%, rgba(0, 242, 255, 0.4), transparent 50%),
+    radial-gradient(circle, rgba(20, 20, 35, 0.9), rgba(8, 8, 18, 0.95));
+  box-shadow:
+    inset 0 2px 20px rgba(0, 242, 255, 0.2),
+    inset 0 -2px 20px rgba(112, 0, 255, 0.25),
+    0 0 40px rgba(0, 242, 255, 0.15);
+  animation: panelHeroOrbBreathe 7s ease-in-out infinite;
+}
+@keyframes panelHeroOrbRotate { to { transform: rotate(360deg); } }
+@keyframes panelHeroOrbBreathe {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50%      { transform: translate(-50%, -50%) scale(1.05); }
+}
+
+/* Decorative bg uses z-index:-1 within the panel-hero stacking context, so
+   children render above it naturally — no need to force position:relative on
+   them, which used to clobber `.pins-overlay { position: absolute }`. */
+
+/* ===== THEME OVERRIDES =====
+   Defaults above are tuned for the "dark" theme.
+   "amoled" stays the same family but pushes the base to pure black so blobs pop. */
+
+:root[data-theme="amoled"] .panel-hero {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.88));
+}
+:root[data-theme="amoled"] .panel-hero-bg .blob {
+  opacity: 0.45;
+}
+
+/* Performance mode: kill the blob animation + soften gradient. The animation
+   itself is paused globally via App.css [data-reduce-motion="force"], but here
+   we also drop opacity so frozen blobs don't dominate a static frame. */
+body[data-reduce-motion="force"] .panel-hero-bg .blob {
+  opacity: 0.15;
+}

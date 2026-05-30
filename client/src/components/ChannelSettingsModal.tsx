@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import axios from 'axios';
+import AnimatedOverlay from '../animations/AnimatedOverlay';
 import { Channel, Server, Role, PermissionOverwrite } from '../types';
 import { Permissions, hasPermission } from '../utils/permissions';
 import { getAvatarUrl } from '../utils/avatar';
@@ -102,16 +102,20 @@ const ChannelSettingsModal: React.FC<ChannelSettingsModalProps> = ({
         setOverwrites(overwrites.filter(o => o.id !== id));
     };
 
-    if (!isOpen) return null;
-
     const isDirty = name !== channel.name ||
         topic !== (channel.topic || '') ||
         (channel.type === 'voice' && (bitrate !== ((channel as any).bitrate / 1000 || 64) || userLimit !== ((channel as any).userLimit || 0))) ||
         JSON.stringify(overwrites) !== JSON.stringify(channel.permissionOverwrites);
 
-    return createPortal(
-        <div className="channel-settings-modal-overlay">
-            <div className="channel-settings-modal" onClick={(e) => e.stopPropagation()}>
+    return (
+        <AnimatedOverlay
+            isOpen={isOpen}
+            onClose={onClose}
+            overlayClassName="channel-settings-modal-overlay"
+            contentClassName="channel-settings-modal"
+            variant="fade"
+        >
+            <div style={{ display: 'contents' }}>
                 {(!isMobile || mobileViewState === 'tabs') && (
                     <div className="channel-settings-sidebar">
                         <div className="sidebar-header">{channel.type === 'voice' ? '🔊' : '# '} {channel.name}</div>
@@ -171,7 +175,7 @@ const ChannelSettingsModal: React.FC<ChannelSettingsModalProps> = ({
                                             className="settings-input"
                                             value={name}
                                             onChange={(e) => setName(e.target.value)}
-                                            maxLength={100}
+                                            maxLength={32}
                                             placeholder="Напишите название..."
                                         />
                                         <span className="input-emoji-icon">✨</span>
@@ -432,8 +436,7 @@ const ChannelSettingsModal: React.FC<ChannelSettingsModalProps> = ({
                         </div>
                 )}
             </div>
-        </div>,
-        document.body
+        </AnimatedOverlay>
     );
 };
 

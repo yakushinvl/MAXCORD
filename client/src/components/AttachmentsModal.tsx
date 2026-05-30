@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
+import AnimatedOverlay from '../animations/AnimatedOverlay';
 import { Message, User } from '../types';
 import { getAvatarUrl, getFullUrl } from '../utils/avatar';
 import { 
@@ -135,11 +136,14 @@ const AttachmentsModal: React.FC<AttachmentsModalProps> = ({ isOpen, onClose, ch
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="attachments-modal-overlay" onClick={onClose}>
-      <div className="attachments-modal-container glass-panel-base" onClick={e => e.stopPropagation()}>
+    <AnimatedOverlay
+      isOpen={isOpen}
+      onClose={onClose}
+      overlayClassName="attachments-modal-overlay"
+      contentClassName="attachments-modal-container glass-panel-base"
+    >
+      <div style={{ display: 'contents' }}>
         <div className="attachments-sidebar">
           <div className="sidebar-title">
              <span>ВЛОЖЕНИЯ</span>
@@ -238,7 +242,7 @@ const AttachmentsModal: React.FC<AttachmentsModalProps> = ({ isOpen, onClose, ch
            </div>
         </div>
       </div>
-    </div>
+    </AnimatedOverlay>
   );
 };
 

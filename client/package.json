@@ -1,14 +1,18 @@
 {
   "name": "maxcord-client",
-  "version": "1.6.33",
+  "version": "1.7.57",
   "private": true,
-  "author": "yakushinvl",
+  "author": "pkda1lu",
   "description": "MAXCORD - Real-time communication platform",
   "dependencies": {
     "axios": "^1.6.2",
     "electron-is-dev": "^2.0.0",
     "electron-log": "^5.4.3",
     "electron-updater": "^6.6.2",
+    "framer-motion": "^12.38.0",
+    "gifenc": "^1.0.3",
+    "gifuct-js": "^2.1.2",
+    "react-virtuoso": "^4.18.7",
     "maxcord-native-audio": "file:./native-audio"
   },
   "main": "public/electron.js",
@@ -18,7 +22,7 @@
     "productName": "MAXCORD",
     "win": {
       "target": "nsis",
-      "icon": "public/icon.ico",
+      "icon": "public/app_icon.ico",
       "requestedExecutionLevel": "asInvoker"
     },
     "files": [
@@ -31,15 +35,15 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "yakushinvl",
-        "repo": "MAXCORD",
+        "owner": "pkda1lu",
+        "repo": "maxcord",
         "releaseType": "release"
       }
     ]
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yakushinvl/MAXCORD.git"
+    "url": "https://github.com/pkda1lu/maxcord.git"
   },
   "scripts": {
     "dev": "vite",
@@ -84,19 +88,19 @@
     "electron": "^39.2.7",
     "electron-builder": "^26.0.12",
     "livekit-client": "^2.17.0",
+    "lucide-react": "^0.577.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-easy-crop": "^5.5.6",
     "react-router-dom": "^7.12.0",
+    "react-syntax-highlighter": "^16.1.1",
     "react-window": "^2.2.5",
     "socket.io-client": "^4.6.1",
+    "tenorjs": "^1.0.10",
     "typescript": "^5.4.5",
     "vite": "^7.3.0",
     "vite-tsconfig-paths": "^6.0.3",
     "wait-on": "^9.0.3",
-    "web-vitals": "^2.1.4",
-    "lucide-react": "^0.577.0",
-    "react-syntax-highlighter": "^16.1.1",
-    "tenorjs": "^1.0.10"
+    "web-vitals": "^2.1.4"
   }
 }

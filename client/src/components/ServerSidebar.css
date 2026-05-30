@@ -3,8 +3,8 @@
 /* --- LIQUID GLASS SERVER SIDEBAR --- */
 .server-sidebar {
   width: 260px;
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
+  /* Background provided by .panel-hero gradient + animated blobs.
+     No backdrop-filter — would double-blur over custom user bg. */
   display: flex;
   flex-direction: column;
   color: var(--text-muted);
@@ -182,51 +182,32 @@
   transform: scale(1.1) rotate(90deg);
 }
 
-/* --- CHANNEL ITEM --- */
+/* --- CHANNEL ITEM (glass card, no neon rim) --- */
 .channel-item {
   display: flex;
   align-items: center;
   padding: 10px 14px;
-  border-radius: 12px;
+  border-radius: 14px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background 0.25s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
   margin: 4px 6px;
   color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.025);
   border: 1px solid transparent;
+  backdrop-filter: blur(20px);
   position: relative;
   overflow: hidden;
 }
 
-.channel-item::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 2px;
-  height: 100%;
-  background: var(--primary-neon);
-  transform: scaleY(0);
-  transition: transform 0.3s ease;
-  box-shadow: 0 0 10px var(--primary-neon);
-}
-
 .channel-item:hover {
-  background: rgba(255, 255, 255, 0.04);
-  color: white;
-  transform: translateX(4px);
-  border-color: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  transform: translateY(-1px);
 }
 
 .channel-item.active {
-  background: linear-gradient(90deg, rgba(0, 229, 255, 0.12), rgba(0, 229, 255, 0.02));
-  color: white;
-  border-color: rgba(0, 229, 255, 0.2);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.channel-item.active::before {
-  transform: scaleY(0.6);
-  border-radius: 0 4px 4px 0;
+  background: linear-gradient(135deg, rgba(0, 242, 255, 0.12), rgba(112, 0, 255, 0.05));
+  color: #fff;
 }
 
 .channel-item.active .channel-name {
@@ -293,8 +274,8 @@
 
 /* --- UNREAD & BADGES --- */
 .channel-item.unread {
-  color: white;
-  background: var(--glass-bg-subtle);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .channel-item.unread::before {

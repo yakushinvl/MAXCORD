@@ -24,7 +24,7 @@ const Landing: React.FC = () => {
 
             <nav className="landing-nav">
                 <div className="nav-logo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-                    <img src={`${import.meta.env.BASE_URL}logo-trans_256x256.png`} alt="MAXCORD" />
+                    <img src={`${import.meta.env.BASE_URL}logo_256x256.png`} alt="MAXCORD" />
                     <span>MAXCORD</span>
                 </div>
                 <div className="nav-links">
@@ -69,7 +69,7 @@ const Landing: React.FC = () => {
                         <button className="btn-primary-neon" onClick={handleOpenApp}>
                             Запустить в браузере
                         </button>
-                        <button className="btn-secondary-outline" onClick={() => window.open('https://github.com/yakushinvl/MAXCORD/releases', '_blank')}>
+                        <button className="btn-secondary-outline" onClick={() => window.open('https://github.com/pkda1lu/maxcord/releases', '_blank')}>
                             Скачать для Windows
                         </button>
                     </div>
@@ -123,7 +123,7 @@ const Landing: React.FC = () => {
             <section className="cta-section" id="download">
                 <div className="cta-card">
                     <h2>Готовы начать свое общение?</h2>
-                    <p>Большое количество пользователей уже выбрали MAXCORD как основной инструмент для связи.</p>
+                    <p>Более 100,000 пользователей уже выбрали MAXCORD как основной инструмент для связи.</p>
                     <button className="btn-login" style={{ padding: '16px 48px', fontSize: '18px' }} onClick={() => navigate('/register')}>
                         Зарегистрироваться
                     </button>
@@ -134,6 +134,7 @@ const Landing: React.FC = () => {
                 <div className="footer-content">
                     <div className="footer-brand">
                         <h4>MAXCORD</h4>
+                        <p>© 2026 MAXCORD Platform. Все права защищены.</p>
                         <div className="bot-api-showcase">
                             <h3>Мощный Bot API</h3>
                             <p>Создавайте уникальные интеграции с помощью Webhooks и Socket.io SDK. Музыкальные боты, управление ролями и кастомные команды.</p>
@@ -145,7 +146,7 @@ const Landing: React.FC = () => {
                             <h5>Продукт</h5>
                             <ul>
                                 <li><a onClick={() => navigate('/login')}>Безопасность</a></li>
-                                <li><a onClick={() => window.open('https://github.com/yakushinvl/MAXCORD/commits/main', '_blank')}>Список изменений</a></li>
+                                <li><a onClick={() => window.open('https://github.com/pkda1lu/maxcord/commits/main', '_blank')}>Список изменений</a></li>
                                 <li><a onClick={() => navigate('/register')}>Серверы</a></li>
                                 <li><a onClick={() => navigate('/docs')}>API для ботов</a></li>
                             </ul>
@@ -155,12 +156,13 @@ const Landing: React.FC = () => {
                             <ul>
                                 <li><a onClick={() => navigate('/')}>О нас</a></li>
                                 <li><a onClick={() => document.getElementById('download')?.scrollIntoView({ behavior: 'smooth' })}>Загрузить</a></li>
-                                <li><a onClick={() => window.open('https://github.com/yakushinvl/MAXCORD', '_blank')}>Github</a></li>
+                                <li><a onClick={() => window.open('https://github.com/pkda1lu/maxcord', '_blank')}>Github</a></li>
                             </ul>
                         </div>
                         <div className="footer-column">
                             <h5>Ресурсы</h5>
                             <ul>
+                                <li><a onClick={() => window.open('https://t.me/maxcord_support', '_blank')}>Поддержка</a></li>
                                 <li><a onClick={() => navigate('/docs')}>Для разработчиков</a></li>
                                 <li><a onClick={() => navigate('/policy')}>Условия использования</a></li>
                             </ul>

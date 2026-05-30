@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export type ThemeType = 'dark' | 'light' | 'amoled';
+export type ThemeType = 'dark' | 'amoled';
 export type DensityType = 'cozy' | 'compact';
-export type AppIconType = 'default' | 'icon1' | 'icon2' | 'icon3' | 'icon4';
+export type AppIconType = 'default' | 'icon1' | 'icon2' | 'icon3' | 'icon4' | 'legacy';
 
 interface CustomColors {
     primary: string;
@@ -53,8 +53,10 @@ export const AppearanceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         if (saved) {
             const parsed = JSON.parse(saved);
             // Ensure performanceMode and custom settings exist for backward compatibility
+            // Migration: light theme has been removed — fall back to dark.
+            const safeTheme: ThemeType = parsed.theme === 'amoled' ? 'amoled' : 'dark';
             return {
-                theme: parsed.theme || 'dark',
+                theme: safeTheme,
                 density: parsed.density || 'cozy',
                 messageSpacing: parsed.messageSpacing ?? 2,
                 groupSpacing: parsed.groupSpacing ?? 16,
@@ -86,15 +88,50 @@ export const AppearanceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         localStorage.setItem('appearance-settings', JSON.stringify(settings));
         applySettings(settings);
 
-        // Apply icon
+        // Apply icon to Electron
         const electron = (window as any).electron;
         if (electron && electron.ipc) {
             electron.ipc.send('change-icon', settings.appIcon);
         }
+
+        // Apply icon to Browser Favicon
+        updateFavicon(settings.appIcon);
     }, [settings]);
+
+    const updateFavicon = (iconType: AppIconType) => {
+        const iconMap: Record<AppIconType, string> = {
+            'default': 'icon.png',
+            'icon1': 'icon1.PNG',
+            'icon2': 'icon2.png',
+            'icon3': 'icon3.png',
+            'icon4': 'icon4.png',
+            'legacy': 'logo_256x256.png'
+        };
+
+        const fileName = iconMap[iconType] || 'icon.png';
+        const fullUrl = `${import.meta.env.BASE_URL}${fileName}`;
+
+        // Find or create the favicon link elements
+        const linkTags = document.querySelectorAll("link[rel*='icon']");
+        
+        if (linkTags.length > 0) {
+            linkTags.forEach(tag => {
+                (tag as HTMLLinkElement).href = fullUrl;
+            });
+        } else {
+            const newLink = document.createElement('link');
+            newLink.rel = 'icon';
+            newLink.href = fullUrl;
+            document.head.appendChild(newLink);
+        }
+    };
 
     const applySettings = (s: AppearanceSettings) => {
         const root = document.documentElement;
+
+        // Expose theme to CSS via data attribute so theme-specific overrides
+        // (e.g. panel-hero on light theme) can target it without re-reading vars.
+        root.dataset.theme = s.theme;
 
         // Theme Colors & Design Tokens
         if (s.theme === 'dark') {
@@ -122,19 +159,6 @@ export const AppearanceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             root.style.setProperty('--text-dim', 'rgba(255, 255, 255, 0.5)');
             root.style.setProperty('--header-primary', '#ffffff');
             root.style.setProperty('--border-divider', 'rgba(255, 255, 255, 0.1)');
-            root.style.setProperty('--glass-blur-value', s.performanceMode ? '0px' : '50px');
-        } else if (s.theme === 'light') {
-            root.style.setProperty('--bg-primary', '#ffffff');
-            root.style.setProperty('--bg-dark', '#ffffff');
-            root.style.setProperty('--glass-bg', 'rgba(255, 255, 255, 0.04)');
-            root.style.setProperty('--glass-bg-subtle', 'rgba(0, 0, 0, 0.015)');
-            root.style.setProperty('--glass-bg-active', 'rgba(0, 0, 0, 0.05)');
-            root.style.setProperty('--glass-bg-accent', 'rgba(0, 0, 0, 0.03)');
-            root.style.setProperty('--glass-border', 'rgba(0, 0, 0, 0.06)');
-            root.style.setProperty('--text-main', '#060607');
-            root.style.setProperty('--text-dim', 'rgba(0, 0, 0, 0.5)');
-            root.style.setProperty('--header-primary', '#060607');
-            root.style.setProperty('--border-divider', 'rgba(0, 0, 0, 0.1)');
             root.style.setProperty('--glass-blur-value', s.performanceMode ? '0px' : '50px');
         }
 

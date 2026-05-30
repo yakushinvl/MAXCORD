@@ -13,6 +13,7 @@ import './App.css';
 import { useEffect } from 'react';
 import TitleBar from './components/TitleBar';
 import Overlay from './pages/Overlay';
+import UpdateNotifier from './components/UpdateNotifier';
 
 const ElectronHandler: React.FC = () => {
   const navigate = useNavigate();
@@ -59,15 +60,10 @@ const AppBackground: React.FC = () => {
 
   const getBaseBgColor = () => {
     if (theme === 'amoled') return '#000000';
-    if (theme === 'light') return '#ffffff';
     return '#020205';
   };
 
   const getGradient = () => {
-    if (theme === 'light') {
-      // Soft Pearl Liquid
-      return 'linear-gradient(-45deg, #ffffff, #f0f4ff, #fff0f5, #f5f0ff, #ffffff)';
-    }
     if (theme === 'amoled') {
       // Deep Void Liquid (Subtle oil slick)
       return 'linear-gradient(-45deg, #000000, #050010, #000810, #080005, #000000)';
@@ -146,7 +142,7 @@ const AppBackground: React.FC = () => {
       }} />
 
       {/* Decorative spheres - Always present and moving */}
-      {!performanceMode && theme !== 'light' && !customBackground && (
+      {!performanceMode && !customBackground && (
         <>
           <div style={{
             position: 'absolute',
@@ -175,6 +171,48 @@ const AppBackground: React.FC = () => {
 import { ChatSettingsProvider } from './contexts/ChatSettingsContext';
 import { WindowSettingsProvider } from './contexts/WindowSettingsContext';
 import { DialogProvider } from './contexts/DialogContext';
+import { AnimatePresence, motion } from 'framer-motion';
+import { pagePushVariants, iosSpring } from './animations/transitions';
+import MotionPreferences from './animations/MotionPreferences';
+
+const PageShell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <motion.div
+    variants={pagePushVariants}
+    initial="initial"
+    animate="animate"
+    exit="exit"
+    transition={iosSpring}
+    style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}
+  >
+    {children}
+  </motion.div>
+);
+
+const AnimatedRoutes: React.FC = () => {
+  const location = useLocation();
+  // Group all "/" and "/*" hits under a single Home key so internal navigation
+  // inside Main doesn't trigger a full page exit/enter.
+  const isHome =
+    !['/login', '/register', '/docs', '/policy'].some(p => location.pathname.startsWith(p))
+    && !location.pathname.startsWith('/invite');
+  const routeKey = isHome ? '__home__' : location.pathname;
+
+  return (
+    <div style={{ position: 'relative', flex: 1, minHeight: 0, width: '100%' }}>
+      <AnimatePresence mode="wait" initial={false}>
+        <Routes location={location} key={routeKey}>
+          <Route path="/login"   element={<PageShell><Login /></PageShell>} />
+          <Route path="/register" element={<PageShell><Register /></PageShell>} />
+          <Route path="/invite/:code" element={<PageShell><InvitePage /></PageShell>} />
+          <Route path="/docs"    element={<PageShell><Docs /></PageShell>} />
+          <Route path="/policy"  element={<PageShell><Policy /></PageShell>} />
+          <Route path="/"        element={<PageShell><Home /></PageShell>} />
+          <Route path="/*"       element={<PageShell><Home /></PageShell>} />
+        </Routes>
+      </AnimatePresence>
+    </div>
+  );
+};
 
 function App() {
   const isElectron = !!(window as any).electron;
@@ -188,28 +226,23 @@ function App() {
           <DialogProvider>
             <AuthProvider>
               <AppearanceProvider>
-                <ChatSettingsProvider>
-                  <WindowSettingsProvider>
-                    <NotificationProvider>
-                      <div className="App" style={{ position: 'relative' }}>
-                        <AppBackground />
-                        <TitleBar />
-                        <ElectronHandler />
-                        <div className="app-content" style={{ position: 'relative', zIndex: 1 }}>
-                          <Routes>
-                            <Route path="/login" element={<Login />} />
-                            <Route path="/register" element={<Register />} />
-                            <Route path="/invite/:code" element={<InvitePage />} />
-                            <Route path="/docs" element={<Docs />} />
-                            <Route path="/policy" element={<Policy />} />
-                            <Route path="/" element={<Home />} />
-                            <Route path="/*" element={<Home />} />
-                          </Routes>
+                <MotionPreferences>
+                  <ChatSettingsProvider>
+                    <WindowSettingsProvider>
+                      <NotificationProvider>
+                        <div className="App" style={{ position: 'relative' }}>
+                          <AppBackground />
+                          <TitleBar />
+                          <ElectronHandler />
+                          <UpdateNotifier />
+                          <div className="app-content" style={{ position: 'relative', zIndex: 1 }}>
+                            <AnimatedRoutes />
+                          </div>
                         </div>
-                      </div>
-                    </NotificationProvider>
-                  </WindowSettingsProvider>
-                </ChatSettingsProvider>
+                      </NotificationProvider>
+                    </WindowSettingsProvider>
+                  </ChatSettingsProvider>
+                </MotionPreferences>
               </AppearanceProvider>
             </AuthProvider>
           </DialogProvider>

@@ -293,7 +293,7 @@
 .account-avatar-wrapper {
   position: absolute;
   top: 100px;
-  left: 40px;
+  left: 25px;
   width: 120px;
   height: 120px;
   border-radius: 40px;
@@ -556,10 +556,6 @@
   background: #000;
 }
 
-.theme-card.light .theme-preview {
-  background: #fff;
-}
-
 .theme-preview {
   display: flex;
 }
@@ -569,11 +565,6 @@
   height: 100%;
   background: rgba(255, 255, 255, 0.05);
   border-right: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.theme-card.light .preview-sidebar {
-  background: rgba(0, 0, 0, 0.05);
-  border-right-color: rgba(0, 0, 0, 0.05);
 }
 
 .preview-content {
@@ -593,10 +584,6 @@
 
 .preview-bubble.short {
   width: 50%;
-}
-
-.theme-card.light .preview-bubble {
-  background: rgba(0, 0, 0, 0.1);
 }
 
 .theme-card.dark .preview-bubble,

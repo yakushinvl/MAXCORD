@@ -1,4 +1,12 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  overlayVariants,
+  overlayTransition,
+  modalPopVariants,
+  modalPopTransition,
+} from '../animations/transitions';
+import { useFreezeAppBackground } from '../animations/useFreezeAppBackground';
 import './Dialog.css'; // Create this CSS file next
 
 export interface DialogOptions {
@@ -103,42 +111,57 @@ export const DialogProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         }
     };
 
+    const dialogOpen = !!(dialogState && dialogState.isOpen);
+    useFreezeAppBackground(dialogOpen);
+
     return (
         <DialogContext.Provider value={{ alert, confirm, prompt }}>
             {children}
-            {dialogState && dialogState.isOpen && (
-                <div className="custom-dialog-overlay">
-                    <div className="custom-dialog-container">
-                        <h3 className="custom-dialog-title">{dialogState.title}</h3>
-                        <p className="custom-dialog-message">{dialogState.message}</p>
+            <AnimatePresence>
+                {dialogOpen && dialogState && (
+                    <motion.div
+                        className="custom-dialog-overlay"
+                        variants={overlayVariants}
+                        initial="initial" animate="animate" exit="exit"
+                        transition={overlayTransition}
+                    >
+                        <motion.div
+                            className="custom-dialog-container"
+                            variants={modalPopVariants}
+                            initial="initial" animate="animate" exit="exit"
+                            transition={modalPopTransition}
+                        >
+                            <h3 className="custom-dialog-title">{dialogState.title}</h3>
+                            <p className="custom-dialog-message">{dialogState.message}</p>
 
-                        {dialogState.type === 'prompt' && (
-                            <input
-                                type="text"
-                                className="custom-dialog-input"
-                                value={inputValue}
-                                onChange={(e) => setInputValue(e.target.value)}
-                                autoFocus
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleConfirm();
-                                    if (e.key === 'Escape') handleCancel();
-                                }}
-                            />
-                        )}
-
-                        <div className="custom-dialog-actions">
-                            {dialogState.type !== 'alert' && (
-                                <button className="custom-dialog-button cancel" onClick={handleCancel}>
-                                    {dialogState.cancelText || 'Отмена'}
-                                </button>
+                            {dialogState.type === 'prompt' && (
+                                <input
+                                    type="text"
+                                    className="custom-dialog-input"
+                                    value={inputValue}
+                                    onChange={(e) => setInputValue(e.target.value)}
+                                    autoFocus
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleConfirm();
+                                        if (e.key === 'Escape') handleCancel();
+                                    }}
+                                />
                             )}
-                            <button className={`custom-dialog-button confirm ${dialogState.type === 'alert' ? 'alert-only' : ''}`} onClick={handleConfirm}>
-                                {dialogState.confirmText || 'ОК'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+
+                            <div className="custom-dialog-actions">
+                                {dialogState.type !== 'alert' && (
+                                    <button className="custom-dialog-button cancel" onClick={handleCancel}>
+                                        {dialogState.cancelText || 'Отмена'}
+                                    </button>
+                                )}
+                                <button className={`custom-dialog-button confirm ${dialogState.type === 'alert' ? 'alert-only' : ''}`} onClick={handleConfirm}>
+                                    {dialogState.confirmText || 'ОК'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </DialogContext.Provider>
     );
 };

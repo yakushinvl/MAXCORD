@@ -1,7 +1,7 @@
 {
   "name": "maxcord-server",
   "version": "1.0.0",
-  "description": "Backend server for MAXCORD",
+  "description": "Backend server for MAXCORD Discord clone",
   "main": "server.js",
   "scripts": {
     "dev": "nodemon server.js",
@@ -22,7 +22,8 @@
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^7.0.12",
     "socket.io": "^4.6.1",
-    "socket.io-client": "^4.8.3"
+    "socket.io-client": "^4.8.3",
+    "yandex-music-client": "^0.4.3"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

@@ -8,8 +8,11 @@ const reportSchema = new mongoose.Schema({
   },
   reportedUser: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    ref: 'User'
+  },
+  reportedMiniApp: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'MiniApp'
   },
   reason: {
     type: String,

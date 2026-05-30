@@ -2,13 +2,20 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { User } from '../types';
 import { getAvatarUrl, getFullUrl } from '../utils/avatar';
-import { CloseIcon, PlusIcon, CheckIcon, TrashIcon, BotIcon } from './Icons';
+import { CloseIcon, PlusIcon, CheckIcon, TrashIcon, BotIcon, MonitorIcon } from './Icons';
 import { useSocket } from '../contexts/SocketContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useDialog } from '../contexts/DialogContext';
 import { Permissions, hasPermission, computePermissions } from '../utils/permissions';
 import UserAvatar from './UserAvatar';
 import UserBadges from './UserBadges';
+import { motion } from 'framer-motion';
+import {
+  popoverVariants,
+  popoverTransition,
+  modalPopVariants,
+  modalPopTransition,
+} from '../animations/transitions';
 import './UserProfileCard.css';
 
 interface UserProfileCardProps {
@@ -267,7 +274,7 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({ userId, onClose, serv
 
     return (
         <div className={`user-profile-overlay ${position ? 'transparent' : ''}`} onClick={onClose}>
-            <div
+            <motion.div
                 className={`user-profile-card ${position ? 'popout' : ''}`}
                 onClick={e => e.stopPropagation()}
                 style={position ? {
@@ -275,9 +282,13 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({ userId, onClose, serv
                     top: adjustedPos.top,
                     left: adjustedPos.left,
                     visibility: isVisible ? 'visible' : 'hidden',
-                    opacity: isVisible ? 1 : 0
+                    transformOrigin: `${Math.max(0, position.x - adjustedPos.left)}px ${Math.max(0, position.y - adjustedPos.top)}px`,
                 } : undefined}
                 ref={cardRef}
+                variants={position ? popoverVariants : modalPopVariants}
+                initial="initial"
+                animate={position ? (isVisible ? 'animate' : 'initial') : 'animate'}
+                transition={position ? popoverTransition : modalPopTransition}
             >
                 <div className="profile-banner" style={{ backgroundColor: '#5865f2', backgroundImage: (memberData?.banner || user.banner) ? `url(${getFullUrl(memberData?.banner || user.banner)})` : 'none', backgroundSize: 'cover' }}>
                     <button className="profile-close-button" onClick={onClose}><CloseIcon /></button>
@@ -378,6 +389,22 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({ userId, onClose, serv
                                     <div className="activity-name">{user.activity.name}</div>
                                     <div className="activity-state">Играет в {user.activity.name}</div>
                                     {user.activity.timestamps?.start && <ActivityTimer startTime={user.activity.timestamps.start} />}
+                                    
+                                    {user.activity.miniAppData && (
+                                        <button 
+                                            className="profile-action-btn secondary small" 
+                                            style={{ marginTop: '10px', height: '32px', width: 'auto', padding: '0 12px' }}
+                                            onClick={() => {
+                                                window.dispatchEvent(new CustomEvent('open-mini-app', { 
+                                                    detail: { app: user.activity?.miniAppData } 
+                                                }));
+                                                onClose();
+                                            }}
+                                        >
+                                            <MonitorIcon size={14} />
+                                            <span>Запустить мини-приложение</span>
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -468,7 +495,7 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({ userId, onClose, serv
                         )}
                     </div>
                 </div>
-            </div>
+            </motion.div>
         </div>
     );
 };

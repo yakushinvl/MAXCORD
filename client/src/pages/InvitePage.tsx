@@ -132,7 +132,7 @@ const InvitePage: React.FC = () => {
                                         <button className="neon-btn" onClick={() => { window.location.href = `maxcord://invite/${code}`; }}>
                                             Открыть в приложении
                                         </button>
-                                        <button style={{ background: 'transparent', border: 'none', color: 'var(--text-dim)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => window.open('https://github.com/yakushinvl/MAXCORD/releases', '_blank')}>
+                                        <button style={{ background: 'transparent', border: 'none', color: 'var(--text-dim)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => window.open('https://github.com/pkda1lu/maxcord/releases', '_blank')}>
                                             Установить MAXCORD
                                         </button>
                                     </>

@@ -44,23 +44,44 @@ router.post('/create', auth, async (req, res) => {
 // Get user's bots
 router.get('/my', auth, async (req, res) => {
     try {
-        const bots = await User.find({ owner: req.user._id, isBot: true }).select('username botToken createdAt bio avatar banner isPublished');
+        const bots = await User.find({ owner: req.user._id, isBot: true }).select('username botToken createdAt bio avatar banner isPublished botModerationStatus botModerationReason botIsBlocked botBlockReason');
         res.json(bots);
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
     }
 });
 
-// Toggle bot publish status
+// Submit bot for marketplace review / un-publish.
+// Publishing now goes through moderator approval. Users can:
+//  - submit a draft for review  → status becomes 'pending'
+//  - withdraw a pending request   → status becomes 'draft'
+//  - unpublish an approved bot    → status becomes 'draft', isPublished=false
 router.patch('/:id/publish', auth, async (req, res) => {
     try {
         const bot = await User.findOne({ _id: req.params.id, owner: req.user._id, isBot: true });
         if (!bot) return res.status(404).json({ message: 'Bot not found' });
 
-        bot.isPublished = !bot.isPublished;
-        await bot.save();
+        if (bot.botIsBlocked) {
+            return res.status(403).json({ message: 'Бот заблокирован модерацией: ' + (bot.botBlockReason || 'без указания причины') });
+        }
 
-        res.json({ message: bot.isPublished ? 'Бот опубликован на витрине' : 'Бот снят с витрины', isPublished: bot.isPublished });
+        let message;
+        if (bot.isPublished) {
+            bot.isPublished = false;
+            bot.botModerationStatus = 'draft';
+            message = 'Бот снят с витрины';
+        } else if (bot.botModerationStatus === 'pending') {
+            bot.botModerationStatus = 'draft';
+            message = 'Заявка на публикацию отозвана';
+        } else {
+            bot.botModerationStatus = 'pending';
+            bot.botModerationReason = null;
+            bot.botModeratedAt = null;
+            bot.botModeratedBy = null;
+            message = 'Бот отправлен на модерацию';
+        }
+        await bot.save();
+        res.json({ message, isPublished: bot.isPublished, moderationStatus: bot.botModerationStatus });
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
     }

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Emoji, Server } from '../types';
 import { getFullUrl } from '../utils/avatar';
+import { popoverVariants, popoverTransition } from '../animations/transitions';
 import './EmojiPicker.css';
 
 interface EmojiPickerProps {
@@ -19,7 +21,14 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({ onSelect, server }) => {
     const serverEmojis = server?.emojis || [];
 
     return (
-        <div className="emoji-picker glass-panel-base">
+        <motion.div
+            className="emoji-picker glass-panel-base"
+            variants={popoverVariants}
+            initial="initial"
+            animate="animate"
+            transition={popoverTransition}
+            style={{ transformOrigin: 'bottom right' }}
+        >
             <div className="emoji-picker-search">
                 <input
                     type="text"
@@ -63,7 +72,7 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({ onSelect, server }) => {
                     </div>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 };
 

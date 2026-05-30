@@ -1,191 +1,462 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>MAXCORD Updater</title>
+    <title>MAXCORD</title>
     <style>
         :root {
-            --bg-dark: #020205;
-            --glass-bg: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --text-primary: #ffffff;
-            --text-muted: rgba(255, 255, 255, 0.5);
-            --accent-primary: #00f2ff;
-            --accent-secondary: #7000ff;
+            --bg-base: #06060a;
+            --bg-card: rgba(18, 18, 26, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.07);
+            --text-main: #ffffff;
+            --text-dim: rgba(255, 255, 255, 0.55);
+            --text-faint: rgba(255, 255, 255, 0.35);
+            --neon-cyan: #00f2ff;
+            --neon-purple: #7000ff;
+            --neon-pink: #ff00c8;
+            --accent-green: #4ade80;
+            --accent-red: #ff5570;
         }
 
-        body {
+        * { box-sizing: border-box; }
+
+        html, body {
             margin: 0;
             padding: 0;
-            background: var(--bg-dark);
-            color: var(--text-primary);
+            background: var(--bg-base);
+            color: var(--text-main);
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             height: 100vh;
             overflow: hidden;
+            -webkit-user-select: none;
             user-select: none;
             -webkit-app-region: drag;
         }
 
-        .container {
-            width: 280px;
-            padding: 40px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            border: 1px solid var(--glass-border);
-            border-radius: 32px;
-            text-align: center;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        /* Animated mesh background — soft gradient blobs that drift */
+        .bg-mesh {
+            position: fixed;
+            inset: -10%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.55;
+            animation: float 18s ease-in-out infinite;
+            will-change: transform;
+        }
+        .blob.cyan   { width: 380px; height: 380px; top: -10%; left: -10%; background: radial-gradient(circle, rgba(0,242,255,0.5), transparent 65%); }
+        .blob.purple { width: 420px; height: 420px; bottom: -15%; right: -10%; background: radial-gradient(circle, rgba(112,0,255,0.5), transparent 65%); animation-delay: -6s; animation-duration: 22s; }
+        .blob.pink   { width: 280px; height: 280px; top: 30%; right: 30%; background: radial-gradient(circle, rgba(255,0,200,0.3), transparent 65%); animation-delay: -12s; animation-duration: 26s; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33%      { transform: translate(40px, -30px) scale(1.08); }
+            66%      { transform: translate(-30px, 40px) scale(0.95); }
         }
 
-        .logo-container {
-            width: 70px;
-            height: 70px;
-            margin-bottom: 24px;
+        /* Main glass card */
+        main {
+            position: relative;
+            z-index: 1;
+            height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 32px;
         }
 
-        .z-logo {
-            font-size: 48px;
-            font-weight: 900;
-            background: linear-gradient(135deg, #fff, #888);
+        .card {
+            width: 100%;
+            max-width: 380px;
+            background: var(--bg-card);
+            backdrop-filter: blur(40px) saturate(170%);
+            -webkit-backdrop-filter: blur(40px) saturate(170%);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            padding: 40px 36px 32px;
+            text-align: center;
+            box-shadow:
+                0 30px 60px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            animation: cardIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(8px) scale(0.98); }
+            to   { opacity: 1; transform: translateY(0)    scale(1); }
+        }
+
+        /* Logo with glow that responds to state */
+        .logo-wrap {
+            position: relative;
+            width: 96px;
+            height: 96px;
+            margin: 0 auto 24px;
+        }
+        /* Outer glow (the colour halo) */
+        .logo-wrap::before {
+            content: '';
+            position: absolute;
+            inset: -16px;
+            border-radius: 38px;
+            background: radial-gradient(circle, rgba(0,242,255,0.35), transparent 60%);
+            filter: blur(20px);
+            opacity: 0.9;
+            transition: background 0.6s ease, opacity 0.4s ease;
+            z-index: 0;
+            animation: pulse 2.4s ease-in-out infinite;
+        }
+        /* Light backplate so the dark-glass squircle reads against the dark UI */
+        .logo-wrap::after {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            border-radius: 24px;
+            background: linear-gradient(160deg, rgba(255,255,255,0.18), rgba(255,255,255,0.04));
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
+            z-index: 1;
+        }
+        .logo-wrap img {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.6));
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1);   opacity: 0.7; }
+            50%      { transform: scale(1.08); opacity: 1; }
+        }
+
+        .card[data-state="downloaded"] .logo-wrap::before,
+        .card[data-state="installing"] .logo-wrap::before {
+            background: radial-gradient(circle, rgba(74,222,128,0.4), transparent 60%);
+        }
+        .card[data-state="up-to-date"] .logo-wrap::before {
+            background: radial-gradient(circle, rgba(74,222,128,0.35), transparent 60%);
+            animation: none;
+        }
+        .card[data-state="error"] .logo-wrap::before {
+            background: radial-gradient(circle, rgba(255,85,112,0.4), transparent 60%);
+            animation: none;
+        }
+
+        /* Status badge above title */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(0, 242, 255, 0.08);
+            border: 1px solid rgba(0, 242, 255, 0.18);
+            color: var(--neon-cyan);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            margin-bottom: 14px;
+        }
+        .badge .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--neon-cyan);
+            box-shadow: 0 0 8px var(--neon-cyan);
+            animation: dotPulse 1.6s ease-in-out infinite;
+        }
+        @keyframes dotPulse {
+            0%, 100% { opacity: 1; }
+            50%      { opacity: 0.3; }
+        }
+
+        .card[data-state="up-to-date"] .badge {
+            background: rgba(74, 222, 128, 0.1);
+            border-color: rgba(74, 222, 128, 0.25);
+            color: var(--accent-green);
+        }
+        .card[data-state="up-to-date"] .badge .dot {
+            background: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
+            animation: none;
+        }
+        .card[data-state="error"] .badge {
+            background: rgba(255, 85, 112, 0.1);
+            border-color: rgba(255, 85, 112, 0.25);
+            color: var(--accent-red);
+        }
+        .card[data-state="error"] .badge .dot {
+            background: var(--accent-red);
+            box-shadow: 0 0 8px var(--accent-red);
+            animation: none;
+        }
+
+        h1.title {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.6px;
+            margin: 0 0 6px;
+            background: linear-gradient(135deg, #fff 0%, #b8b8c8 100%);
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.2));
-            margin: 0;
-            line-height: 1;
-        }
-
-        h1 {
-            font-size: 22px;
-            margin: 0 0 8px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            opacity: 0.9;
         }
 
         .status {
             font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 32px;
-            font-weight: 500;
-            letter-spacing: 0.3px;
-            min-height: 20px;
+            color: var(--text-dim);
+            margin: 0 0 28px;
+            line-height: 1.5;
+            min-height: 38px;
+            transition: color 0.3s ease;
         }
 
-        .progress-wrapper {
+        /* Progress bar */
+        .progress {
             width: 100%;
             display: none;
+            margin: 0 0 24px;
         }
-
-        .progress-bg {
+        .progress.visible { display: block; }
+        .progress-track {
             width: 100%;
             height: 4px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 999px;
             overflow: hidden;
             position: relative;
         }
-
-        .progress-bar {
+        .progress-fill {
             width: 0%;
             height: 100%;
-            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
-            border-radius: 2px;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink));
+            background-size: 200% 100%;
+            border-radius: 999px;
+            box-shadow: 0 0 12px rgba(0, 242, 255, 0.5);
+            transition: width 0.4s cubic-bezier(0.32, 0.72, 0, 1);
             position: relative;
-            box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
-            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: gradientShift 3s linear infinite;
         }
-
-        .progress-bar::after {
+        /* Slide gradient LEFT→RIGHT (matches download direction).
+           CSS quirk: positive background-position moves the image to the LEFT,
+           so going from 200% → 0% makes the colours appear to travel rightward. */
+        @keyframes gradientShift {
+            0%   { background-position: 200% 0; }
+            100% { background-position: 0% 0; }
+        }
+        .progress-fill::after {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            right: 0;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-            animation: shimmer 1.5s infinite;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shimmer 1.8s linear infinite;
         }
-
         @keyframes shimmer {
-            0% {
-                transform: translateX(-100%);
-            }
-
-            100% {
-                transform: translateX(100%);
-            }
+            0%   { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        .progress-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 11px;
+            color: var(--text-faint);
+            font-variant-numeric: tabular-nums;
+            font-weight: 500;
         }
 
-        .loading-dots:after {
-            content: '.';
-            animation: dots 1.5s steps(4, end) infinite;
+        /* Loading dots */
+        .dots::after {
+            content: '...';
+            display: inline-block;
+            width: 18px;
+            text-align: left;
+            animation: dotsAnim 1.4s steps(4, end) infinite;
+        }
+        @keyframes dotsAnim {
+            0%   { content: '';     }
+            25%  { content: '.';    }
+            50%  { content: '..';   }
+            75%  { content: '...';  }
+            100% { content: '';     }
         }
 
-        @keyframes dots {
+        /* Did-you-know tips */
+        .tip {
+            margin-top: 20px;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 14px;
+            font-size: 12px;
+            color: var(--text-dim);
+            line-height: 1.5;
+            text-align: left;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            animation: tipIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .tip-label {
+            display: block;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--text-faint);
+            margin-bottom: 4px;
+        }
+        .tip-icon {
+            flex-shrink: 0;
+            width: 18px;
+            height: 18px;
+            color: var(--neon-cyan);
+            margin-top: 1px;
+        }
+        @keyframes tipIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
 
-            0%,
-            20% {
-                content: '.';
-            }
-
-            40% {
-                content: '..';
-            }
-
-            60% {
-                content: '...';
-            }
-
-            80%,
-            100% {
-                content: '';
-            }
+        /* Footer */
+        footer {
+            position: fixed;
+            bottom: 14px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 10px;
+            color: var(--text-faint);
+            letter-spacing: 0.5px;
+            z-index: 2;
         }
     </style>
 </head>
-
 <body>
-    <div class="container">
-        <div class="logo-container">
-            <h1 class="z-logo">Z</h1>
-        </div>
-        <h1>MAXCORD</h1>
-        <div id="status" class="status">Проверка обновлений<span class="loading-dots"></span></div>
-        <div id="progress-wrapper" class="progress-wrapper">
-            <div class="progress-bg">
-                <div id="progress-bar" class="progress-bar"></div>
+    <div class="bg-mesh">
+        <div class="blob cyan"></div>
+        <div class="blob purple"></div>
+        <div class="blob pink"></div>
+    </div>
+
+    <main>
+        <div id="card" class="card" data-state="checking">
+            <div class="logo-wrap">
+                <img src="icon.png" alt="MAXCORD">
+            </div>
+            <div id="badge" class="badge">
+                <span class="dot"></span>
+                <span id="badge-text">Обновление</span>
+            </div>
+            <h1 class="title">MAXCORD</h1>
+            <p id="status" class="status">Проверка обновлений<span class="dots"></span></p>
+
+            <div id="progress" class="progress">
+                <div class="progress-track">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <div class="progress-meta">
+                    <span id="progress-pct">0%</span>
+                    <span id="progress-eta">подготовка…</span>
+                </div>
+            </div>
+
+            <div id="tip" class="tip">
+                <svg class="tip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 16v-4M12 8h.01"/>
+                </svg>
+                <div>
+                    <span class="tip-label">Знаете ли вы?</span>
+                    <span id="tip-text">MAXCORD поддерживает совместный просмотр YouTube в голосовых каналах.</span>
+                </div>
             </div>
         </div>
-    </div>
+    </main>
+
+    <footer>© MAXCORD · Подключаемся к будущему</footer>
 
     <script>
         const { ipcRenderer } = require('electron');
-        const statusElement = document.getElementById('status');
-        const progressWrapper = document.getElementById('progress-wrapper');
-        const progressBar = document.getElementById('progress-bar');
+        const card        = document.getElementById('card');
+        const badgeText   = document.getElementById('badge-text');
+        const statusEl    = document.getElementById('status');
+        const progress    = document.getElementById('progress');
+        const progressFill= document.getElementById('progress-fill');
+        const progressPct = document.getElementById('progress-pct');
+        const progressEta = document.getElementById('progress-eta');
+        const tipText     = document.getElementById('tip-text');
 
-        ipcRenderer.on('updater-message', (event, text) => {
-            statusElement.innerText = text;
+        const TIPS = [
+            'MAXCORD поддерживает совместный просмотр YouTube в голосовых каналах.',
+            'Используйте ПКМ по серверу, чтобы быстро его покинуть или открыть настройки.',
+            'Голосовые каналы поддерживают демонстрацию экрана с системным звуком.',
+            'Включите Performance Mode в настройках, чтобы отключить эффекты на слабом железе.',
+            'Реакции и закреплённые сообщения работают и в личных чатах.',
+            'Перетащите изображение прямо в чат, чтобы быстро его отправить.',
+        ];
+        let tipIdx = Math.floor(Math.random() * TIPS.length);
+        setInterval(() => {
+            tipIdx = (tipIdx + 1) % TIPS.length;
+            const tipBox = document.getElementById('tip');
+            tipBox.style.animation = 'none';
+            void tipBox.offsetWidth; // restart animation
+            tipBox.style.animation = '';
+            tipText.textContent = TIPS[tipIdx];
+        }, 6500);
+
+        // Map status text → visual state without changing the ipc contract.
+        function detectState(msg) {
+            const m = msg.toLowerCase();
+            if (m.includes('ошибк'))                              return { state: 'error',      badge: 'Ошибка' };
+            if (m.includes('последняя версия'))                   return { state: 'up-to-date', badge: 'Актуальная версия' };
+            if (m.includes('скачано') || m.includes('установк'))  return { state: 'installing', badge: 'Установка' };
+            if (m.includes('загрузка') || m.includes('найдено'))  return { state: 'downloading',badge: 'Загрузка' };
+            return { state: 'checking', badge: 'Обновление' };
+        }
+
+        let lastSize = 0;
+        let lastTime = Date.now();
+        function formatEta(percent) {
+            if (percent <= 0 || percent >= 100) return '';
+            // Rough ETA from last call rate.
+            const now = Date.now();
+            const dT = (now - lastTime) / 1000;
+            if (dT < 0.1) return '';
+            const delta = percent - lastSize;
+            if (delta <= 0) return '';
+            const remaining = (100 - percent) / delta * dT;
+            lastSize = percent;
+            lastTime = now;
+            if (remaining < 5)   return 'почти готово';
+            if (remaining < 60)  return `~${Math.round(remaining)} сек`;
+            return `~${Math.round(remaining / 60)} мин`;
+        }
+
+        ipcRenderer.on('updater-message', (_evt, text) => {
+            statusEl.innerHTML = text;
+            const { state, badge } = detectState(text);
+            card.dataset.state = state;
+            badgeText.textContent = badge;
+            if (state !== 'downloading') {
+                progress.classList.remove('visible');
+            }
         });
 
-        ipcRenderer.on('updater-progress', (event, percent) => {
-            progressWrapper.style.display = 'block';
-            progressBar.style.width = percent + '%';
-            statusElement.innerText = `Загрузка обновления: ${Math.round(percent)}%`;
+        ipcRenderer.on('updater-progress', (_evt, percent) => {
+            progress.classList.add('visible');
+            card.dataset.state = 'downloading';
+            badgeText.textContent = 'Загрузка';
+            progressFill.style.width = percent + '%';
+            progressPct.textContent = Math.round(percent) + '%';
+            const eta = formatEta(percent);
+            if (eta) progressEta.textContent = eta;
+            statusEl.innerHTML = 'Загружаем обновление<span class="dots"></span>';
         });
     </script>
 </body>
-
 </html>

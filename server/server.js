@@ -21,12 +21,16 @@ const server = http.createServer(app);
 
 app.use(compression());
 
-const io = socketIo(server, { cors: { origin: [process.env.CLIENT_URL || "http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3000"], methods: ["GET", "POST"] } });
+const io = socketIo(server, {
+  cors: { origin: [process.env.CLIENT_URL || "http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3000"], methods: ["GET", "POST"] },
+  pingInterval: 10000,
+  pingTimeout: 5000,
+});
 
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    const allowedOrigins = [process.env.CLIENT_URL || 'http://localhost:3000', 'http://localhost:3000', 'http://127.0.0.1:3000', 'https://maxcord.fun', 'http://maxcord.fun'];
+    const allowedOrigins = [process.env.CLIENT_URL || 'http://localhost:3000', 'http://localhost:3000', 'http://127.0.0.1:3000', 'https://maxcord.duckdns.com', 'http://maxcord.duckdns.com', 'https://maxcord.fun', 'http://maxcord.fun'];
     if (allowedOrigins.some(allowed => origin === allowed || origin.startsWith(allowed))) callback(null, true);
     else callback(null, true);
   },
@@ -55,7 +59,19 @@ app.use('/api/showcase', require('./routes/showcase'));
 app.use('/api/webhooks', require('./routes/webhooks'));
 app.use('/api/upload-files', require('./routes/uploads'));
 app.use('/api/livekit', require('./routes/livekit'));
+app.get(['/maxcord-sdk.js', '/maxcord-sdk.js'], (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  res.sendFile(path.join(__dirname, 'public/maxcord-sdk.js'));
+});
+app.use('/miniapps', express.static(path.join(__dirname, 'public/miniapps'), {
+  setHeaders: (res) => {
+    res.removeHeader('X-Frame-Options');
+    res.setHeader('Content-Security-Policy', "frame-ancestors 'self' https: http: file: maxcord:;");
+  }
+}));
 app.use('/api/moderation', require('./routes/moderation'));
+app.use('/api/version', require('./routes/version'));
 app.use('/api/uploads', express.static(path.join(__dirname, 'uploads'), {
   maxAge: '7d',
   immutable: true,
@@ -72,6 +88,8 @@ app.use(express.static(path.join(__dirname, '../client/build')));
 // The "catchall" handler: for any request that doesn't
 // match one above, send back React's index.html file.
 app.get(/^(?!\/api).+/, (req, res) => {
+  res.removeHeader('X-Frame-Options');
+  res.setHeader('Content-Security-Policy', "frame-ancestors 'self' https: http: file: maxcord:;");
   res.sendFile(path.join(__dirname, '../client/build/index.html'));
 });
 
@@ -80,6 +98,17 @@ const getVoiceChannelUsers = async (channelId) => {
   if (!room) return [];
   const users = [];
   const User = require('./models/User');
+  // Build nickname map for this server's members
+  let nickByUserId = new Map();
+  try {
+    const channel = await Channel.findById(channelId).select('server');
+    if (channel?.server) {
+      const srv = await Server.findById(channel.server).select('members');
+      (srv?.members || []).forEach(m => {
+        if (m.user && m.nickname) nickByUserId.set(String(m.user), m.nickname);
+      });
+    }
+  } catch (e) { /* fall back to username */ }
   for (const socketId of room) {
     const socket = io.sockets.sockets.get(socketId);
     if (socket && socket.userId) {
@@ -91,6 +120,7 @@ const getVoiceChannelUsers = async (channelId) => {
         userData.isScreenSharing = socket.isScreenSharing || false;
         userData.isServerMuted = socket.isServerMuted || false;
         userData.isServerDeafened = socket.isServerDeafened || false;
+        userData.nickname = nickByUserId.get(String(user._id)) || null;
         users.push(userData);
       }
     }
@@ -115,7 +145,88 @@ app.get('/api/channels/:id/voice-participants', async (req, res) => {
 
 const voiceChannelYouTubeStates = new Map();
 
+// --- Voice presences (mini-app virtual participants) ---
+// Map<channelId, Map<sessionId, presence>>
+const voicePresencesByChannel = new Map();
+
+function getPresencesSnapshot(channelId) {
+  const m = voicePresencesByChannel.get(String(channelId));
+  return m ? Array.from(m.values()) : [];
+}
+function setPresence(channelId, presence) {
+  const key = String(channelId);
+  let m = voicePresencesByChannel.get(key);
+  if (!m) { m = new Map(); voicePresencesByChannel.set(key, m); }
+  m.set(presence.sessionId, presence);
+}
+function removePresence(channelId, sessionId) {
+  const m = voicePresencesByChannel.get(String(channelId));
+  if (!m) return null;
+  const p = m.get(sessionId);
+  if (!p) return null;
+  m.delete(sessionId);
+  if (m.size === 0) voicePresencesByChannel.delete(String(channelId));
+  return p;
+}
+function cleanupUserPresencesInChannel(channelId, userId, io) {
+  const m = voicePresencesByChannel.get(String(channelId));
+  if (!m) return;
+  for (const [sid, p] of Array.from(m.entries())) {
+    if (String(p.ownerUserId) === String(userId)) {
+      m.delete(sid);
+      io.to(`voice-channel-${channelId}`).emit('voice-presence-removed', { sessionId: sid, channelId });
+    }
+  }
+  if (m.size === 0) voicePresencesByChannel.delete(String(channelId));
+}
+function cleanupUserPresencesEverywhere(userId, io) {
+  for (const [chId, m] of voicePresencesByChannel.entries()) {
+    for (const [sid, p] of Array.from(m.entries())) {
+      if (String(p.ownerUserId) === String(userId)) {
+        m.delete(sid);
+        io.to(`voice-channel-${chId}`).emit('voice-presence-removed', { sessionId: sid, channelId: chId });
+      }
+    }
+    if (m.size === 0) voicePresencesByChannel.delete(chId);
+  }
+}
+
 app.set('io', io);
+app.set('voiceManager', { getVoiceChannelUsers, notifyVoiceChannelUpdate });
+
+// Periodic sweep: kick zombie sockets (disconnected but still listed in voice rooms)
+// out of voice-channel rooms and notify everyone. This is a safety net for cases
+// where the normal disconnect event never fires (proxy keepalives, transport upgrades,
+// abrupt power loss without TCP RST, etc.).
+setInterval(async () => {
+  try {
+    const affectedChannels = new Set();
+    for (const [roomName, sockets] of io.sockets.adapter.rooms.entries()) {
+      if (!roomName.startsWith('voice-channel-')) continue;
+      const channelId = roomName.replace('voice-channel-', '');
+      for (const sid of sockets) {
+        const s = io.sockets.sockets.get(sid);
+        if (!s || !s.connected) {
+          if (s) {
+            s.leave(roomName);
+            s.voiceChannelId = null;
+          } else {
+            sockets.delete(sid);
+          }
+          if (s && s.userId) {
+            io.to(roomName).emit('voice-user-left', { userId: s.userId });
+          }
+          affectedChannels.add(channelId);
+        }
+      }
+    }
+    for (const channelId of affectedChannels) {
+      await notifyVoiceChannelUpdate(channelId);
+    }
+  } catch (err) {
+    console.error('Voice sweep error:', err);
+  }
+}, 10000);
 io.use(async (socket, next) => {
   const token = socket.handshake.auth.token;
   if (token) {
@@ -131,10 +242,11 @@ io.use(async (socket, next) => {
       }
 
       const jwt = require('jsonwebtoken');
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const secret = process.env.JWT_SECRET || 'maxcord_fallback_secret_key_2026';
+      const decoded = jwt.verify(token, secret);
       socket.userId = decoded.userId;
       next();
-    } catch (err) { next(new Error('Authentication error')); }
+      } catch (err) { next(new Error('Authentication error')); }
   } else next(new Error('Authentication error'));
 });
 
@@ -523,9 +635,90 @@ io.on('connection', (socket) => {
       }
     }
     socket.emit('dm-call-existing-users', existing);
+    socket.emit('voice-presences-snapshot', {
+      channelId: `call-${data.dmId}`,
+      presences: getPresencesSnapshot(`call-${data.dmId}`),
+    });
+  });
+
+  // --- Voice presence lifecycle ---
+  // The mini-app sends a "channelHint" — either the LiveKit room name (e.g.
+  // "call-<dmId>" or "channel-<id>") — and the server validates the user is
+  // actually in that room before broadcasting.
+
+  function presenceSocketRoom(channelId) {
+    if (channelId.startsWith('call-')) return 'dm-call-' + channelId.slice(5);
+    if (channelId.startsWith('channel-')) return 'voice-channel-' + channelId.slice(8);
+    return null;
+  }
+  function userIsInPresenceChannel(s, channelId) {
+    if (channelId.startsWith('call-')) return s.dmCallId === channelId.slice(5);
+    if (channelId.startsWith('channel-')) return String(s.voiceChannelId) === channelId.slice(8);
+    return false;
+  }
+
+  socket.on('voice-presence-create', (data) => {
+    const { sessionId, channelId, displayName, avatar } = data || {};
+    if (!sessionId || !channelId || !userIsInPresenceChannel(socket, channelId)) return;
+    const room = presenceSocketRoom(channelId);
+    if (!room) return;
+    const presence = {
+      sessionId, channelId,
+      ownerUserId: String(socket.userId),
+      displayName: displayName || 'Мини-приложение',
+      avatar: avatar || null,
+      background: null,
+      controls: [],
+    };
+    setPresence(channelId, presence);
+    io.to(room).emit('voice-presence-added', presence);
+    if (typeof socket._ownedPresences !== 'object') socket._ownedPresences = new Set();
+    socket._ownedPresences.add(sessionId + '|' + channelId);
+  });
+
+  socket.on('voice-presence-update', (data) => {
+    const { sessionId, channelId, patch } = data || {};
+    const m = voicePresencesByChannel.get(String(channelId));
+    const presence = m?.get(sessionId);
+    if (!presence || presence.ownerUserId !== String(socket.userId)) return;
+    if (patch.background !== undefined) presence.background = patch.background;
+    if (patch.subtitle !== undefined) presence.subtitle = patch.subtitle;
+    if (patch.accentColor !== undefined) presence.accentColor = patch.accentColor;
+    if (patch.displayName !== undefined) presence.displayName = patch.displayName;
+    if (patch.avatar !== undefined) presence.avatar = patch.avatar;
+    if (Array.isArray(patch.controls)) presence.controls = patch.controls;
+    if (patch.controlPatch) {
+      const ctrl = (presence.controls || []).find(c => c.id === patch.controlPatch.id);
+      if (ctrl) Object.assign(ctrl, patch.controlPatch.partial || {});
+    }
+    const room = presenceSocketRoom(channelId);
+    if (room) io.to(room).emit('voice-presence-updated', presence);
+  });
+
+  socket.on('voice-presence-destroy', (data) => {
+    const { sessionId, channelId } = data || {};
+    const m = voicePresencesByChannel.get(String(channelId));
+    const presence = m?.get(sessionId);
+    if (!presence || presence.ownerUserId !== String(socket.userId)) return;
+    removePresence(channelId, sessionId);
+    const room = presenceSocketRoom(channelId);
+    if (room) io.to(room).emit('voice-presence-removed', { sessionId, channelId });
+    socket._ownedPresences?.delete(sessionId + '|' + channelId);
+  });
+
+  // Any voice-channel member can send a control — forwarded to the presence owner.
+  socket.on('voice-presence-control', (data) => {
+    const { sessionId, channelId, controlId, value } = data || {};
+    if (!userIsInPresenceChannel(socket, channelId)) return;
+    const presence = voicePresencesByChannel.get(String(channelId))?.get(sessionId);
+    if (!presence) return;
+    io.to(`user-${presence.ownerUserId}`).emit('voice-presence-control', {
+      sessionId, channelId, controlId, value, fromUserId: String(socket.userId),
+    });
   });
 
   socket.on('leave-dm-call', (data) => {
+    cleanupUserPresencesInChannel('call-' + data.dmId, socket.userId, io);
     console.log(`[Call] User ${socket.userId} left DM room ${data.dmId}`);
     socket.leave(`dm-call-${data.dmId}`);
     socket.dmCallId = null;
@@ -564,12 +757,16 @@ io.on('connection', (socket) => {
       }
       const existingUsers = await getVoiceChannelUsers(channelId);
       socket.join(`voice-channel-${channelId}`); socket.voiceChannelId = channelId;
+      socket.emit('voice-presences-snapshot', { channelId, presences: getPresencesSnapshot(channelId) });
       // user is already declared above
+      const memberRec = (fullServer.members || []).find(m => String(m.user) === String(socket.userId));
+      const serverNickname = memberRec?.nickname || null;
       socket.to(`voice-channel-${channelId}`).emit('voice-user-joined', {
         userId: socket.userId,
         user: {
           _id: user._id,
           username: user.username,
+          nickname: serverNickname,
           avatar: user.avatar,
           banner: user.banner,
           badges: user.badges || [],
@@ -583,7 +780,8 @@ io.on('connection', (socket) => {
       socket.emit('voice-existing-users', existingUsers);
       socket.emit('voice-server-state-update', {
         isServerMuted: socket.isServerMuted || false,
-        isServerDeafened: socket.isServerDeafened || false
+        isServerDeafened: socket.isServerDeafened || false,
+        myNickname: serverNickname,
       });
       await notifyVoiceChannelUpdate(channelId);
       const ch = await Channel.findById(channelId);
@@ -700,12 +898,12 @@ io.on('connection', (socket) => {
 
   socket.on('leave-voice-channel', async (data) => {
     const channelId = data.channelId;
+    cleanupUserPresencesInChannel('channel-' + channelId, socket.userId, io);
     socket.leave(`voice-channel-${channelId}`);
     socket.voiceChannelId = null;
     io.to(`voice-channel-${channelId}`).emit('voice-user-left', { userId: socket.userId });
     await notifyVoiceChannelUpdate(channelId);
-    
-    // If room is empty, clear YT state
+
     const room = io.sockets.adapter.rooms.get(`voice-channel-${channelId}`);
     if (!room || room.size === 0) {
       voiceChannelYouTubeStates.delete(channelId);
@@ -818,14 +1016,17 @@ io.on('connection', (socket) => {
   socket.on('disconnect', async () => {
     if (socket.voiceChannelId) {
       const channelId = socket.voiceChannelId;
+      cleanupUserPresencesInChannel('channel-' + channelId, socket.userId, io);
       io.to(`voice-channel-${channelId}`).emit('voice-user-left', { userId: socket.userId });
       await notifyVoiceChannelUpdate(channelId);
-      
+
       const room = io.sockets.adapter.rooms.get(`voice-channel-${channelId}`);
       if (!room || room.size === 0) {
         voiceChannelYouTubeStates.delete(channelId);
       }
     }
+    if (socket.dmCallId) cleanupUserPresencesInChannel('call-' + socket.dmCallId, socket.userId, io);
+    cleanupUserPresencesEverywhere(socket.userId, io);
     const connections = io.sockets.adapter.rooms.get(`user-${String(socket.userId)}`);
     if (!connections || connections.size === 0) {
       try {
@@ -839,5 +1040,9 @@ io.on('connection', (socket) => {
   });
 });
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/maxcord').then(() => { console.log('Connected to MongoDB'); }).catch(err => { console.error('MongoDB connection error:', err); });
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/maxcord').then(async () => {
+  console.log('Connected to MongoDB');
+  try { await require('./bootstrap/systemMiniApps')(); }
+  catch (e) { console.error('[MiniApps] bootstrap failed:', e.message); }
+}).catch(err => { console.error('MongoDB connection error:', err); });
 server.listen(process.env.PORT || 5000, () => { console.log(`Server running on port ${process.env.PORT || 5000}`); });

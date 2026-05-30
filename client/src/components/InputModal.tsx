@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import './InputModal.css';
+import Modal from './Modal';
 
 interface InputModalProps {
     isOpen: boolean;
@@ -28,12 +28,9 @@ const InputModal: React.FC<InputModalProps> = ({
     useEffect(() => {
         if (isOpen) {
             setValue(initialValue);
-            // Focus input after a short delay to ensure modal is rendered
             setTimeout(() => inputRef.current?.focus(), 50);
         }
     }, [isOpen, initialValue]);
-
-    if (!isOpen) return null;
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -42,38 +39,47 @@ const InputModal: React.FC<InputModalProps> = ({
     };
 
     return (
-        <div className="input-modal-overlay" onClick={onClose}>
-            <div className="input-modal-content" onClick={e => e.stopPropagation()}>
-                <div className="input-modal-header">
-                    <h3>{title}</h3>
-                </div>
-                <form onSubmit={handleSubmit}>
-                    <div className="input-modal-body">
-                        {label && (
-                            <div className="input-group">
-                                <label>{label}</label>
-                            </div>
-                        )}
-                        <input
-                            ref={inputRef}
-                            type={type}
-                            className="input-modal-input"
-                            value={value}
-                            onChange={e => setValue(e.target.value)}
-                            placeholder={placeholder}
-                        />
-                    </div>
-                    <div className="input-modal-footer">
-                        <button type="button" className="input-modal-cancel" onClick={onClose}>
-                            Отмена
-                        </button>
-                        <button type="submit" className="input-modal-submit">
-                            Сохранить
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+        <Modal
+            open={isOpen}
+            onClose={onClose}
+            title={title}
+            size="sm"
+            footer={
+                <>
+                    <button type="button" className="zv-btn zv-btn--ghost" onClick={onClose}>
+                        Отмена
+                    </button>
+                    <button type="submit" form="input-modal-form" className="zv-btn zv-btn--primary">
+                        Сохранить
+                    </button>
+                </>
+            }
+        >
+            <form id="input-modal-form" onSubmit={handleSubmit}>
+                {label && (
+                    <label
+                        style={{
+                            display: 'block',
+                            color: 'var(--text-dim)',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            marginBottom: 8,
+                        }}
+                    >
+                        {label}
+                    </label>
+                )}
+                <input
+                    ref={inputRef}
+                    type={type}
+                    className="auth-input-glass"
+                    value={value}
+                    onChange={e => setValue(e.target.value)}
+                    placeholder={placeholder}
+                    style={{ fontSize: 15 }}
+                />
+            </form>
+        </Modal>
     );
 };
 

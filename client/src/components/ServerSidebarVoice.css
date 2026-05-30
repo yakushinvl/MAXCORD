@@ -33,6 +33,39 @@
     background: rgba(0, 229, 255, 0.05);
 }
 
+/* === Drag-to-move (admins only) === */
+/* Only `cursor: grab` — `:active { cursor: grabbing }` was fighting the
+   browser's native drag cursor and made it jitter. Browser owns the cursor
+   the moment the drag begins. */
+.voice-user-item.is-draggable {
+    cursor: grab;
+}
+/* No transform here — scaling the element shifts the cursor's hit area and
+   makes :hover flicker on/off, which read as cursor "twitch". Just fade. */
+.voice-user-item.is-dragging {
+    opacity: 0.35;
+}
+
+/* Critical: <img> and <a> are draggable=true by default. If any descendant
+   intercepts the drag with its own native behaviour, our parent dragstart
+   never fires. Disable for all descendants of a draggable user-item. */
+.voice-user-item.is-draggable img,
+.voice-user-item.is-draggable a {
+    -webkit-user-drag: none;
+    user-select: none;
+}
+
+/* Drop-target highlight on voice channel-item while a member is being dragged
+   onto it. Solid cyan rim + glow so the target is unmistakable. */
+.channel-item.is-drop-target {
+    background: linear-gradient(135deg, rgba(0, 242, 255, 0.18), rgba(112, 0, 255, 0.08)) !important;
+    border-color: rgba(0, 242, 255, 0.55) !important;
+    box-shadow: 0 0 18px rgba(0, 242, 255, 0.35),
+                inset 0 0 12px rgba(0, 242, 255, 0.12) !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+}
+
 .voice-user-avatar {
     width: 24px;
     height: 24px;

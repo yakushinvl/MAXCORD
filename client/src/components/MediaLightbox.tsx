@@ -1,8 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import CustomVideoPlayer from './CustomVideoPlayer';
 import { ChevronLeftIcon, ChevronRightIcon, CloseIcon, DownloadIcon } from './Icons';
 import { getFullUrl } from '../utils/avatar';
+import {
+  overlayVariants,
+  overlayTransition,
+  modalPopVariants,
+  modalPopTransition,
+} from '../animations/transitions';
+import { useFreezeAppBackground } from '../animations/useFreezeAppBackground';
 import './MediaLightbox.css';
 
 interface MediaItem {
@@ -21,6 +29,7 @@ interface MediaLightboxProps {
 
 const MediaLightbox: React.FC<MediaLightboxProps> = ({ isOpen, onClose, media, initialIndex }) => {
     const [currentIndex, setCurrentIndex] = useState(initialIndex);
+    useFreezeAppBackground(isOpen);
 
     useEffect(() => {
         if (isOpen) {
@@ -80,14 +89,26 @@ const MediaLightbox: React.FC<MediaLightboxProps> = ({ isOpen, onClose, media, i
         }
     };
 
-    if (!isOpen) return null;
-
-    const currentItem = media[currentIndex];
-    const isVideo = currentItem.type.startsWith('video/');
+    const currentItem = isOpen ? media[currentIndex] : null;
+    const isVideo = currentItem ? currentItem.type.startsWith('video/') : false;
 
     return createPortal(
-        <div className="media-lightbox-overlay" onClick={onClose}>
-            <div className="media-lightbox-content" onClick={(e) => e.stopPropagation()}>
+        <AnimatePresence>
+        {isOpen && currentItem && (
+        <motion.div
+            className="media-lightbox-overlay"
+            onClick={onClose}
+            variants={overlayVariants}
+            initial="initial" animate="animate" exit="exit"
+            transition={overlayTransition}
+        >
+            <motion.div
+                className="media-lightbox-content"
+                onClick={(e) => e.stopPropagation()}
+                variants={modalPopVariants}
+                initial="initial" animate="animate" exit="exit"
+                transition={modalPopTransition}
+            >
                 {/* Image or Video */}
                 <div className="media-display-area">
                     {isVideo ? (
@@ -121,7 +142,7 @@ const MediaLightbox: React.FC<MediaLightboxProps> = ({ isOpen, onClose, media, i
                         <span>Скачать</span>
                     </button>
                 </div>
-            </div>
+            </motion.div>
 
             {/* Controls */}
             <button className="lightbox-close-btn" onClick={onClose}>
@@ -138,7 +159,9 @@ const MediaLightbox: React.FC<MediaLightboxProps> = ({ isOpen, onClose, media, i
                     </button>
                 </>
             )}
-        </div>,
+        </motion.div>
+        )}
+        </AnimatePresence>,
         document.body
     );
 };

@@ -104,6 +104,9 @@ const messageSchema = new mongoose.Schema({
   }
 });
 
+messageSchema.index({ channel: 1, createdAt: -1 });
+messageSchema.index({ directMessage: 1, createdAt: -1 });
+
 messageSchema.pre('save', function (next) {
   if (this.type === 'default' && !this.content && (!this.attachments || this.attachments.length === 0) && (!this.embeds || this.embeds.length === 0)) {
     return next(new Error('Сообщение не может быть пустым (нужен текст, вложение или эмбед)'));

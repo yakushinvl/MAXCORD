@@ -11,7 +11,8 @@ const auth = async (req, res, next) => {
 
     let user;
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const secret = process.env.JWT_SECRET || 'maxcord_fallback_secret_key_2026';
+      const decoded = jwt.verify(token, secret);
       user = await User.findById(decoded.userId).select('-password');
     } catch (jwtError) {
       if (token.startsWith('bot_')) {

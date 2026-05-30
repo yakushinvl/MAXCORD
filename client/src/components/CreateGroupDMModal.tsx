@@ -4,6 +4,7 @@ import { User } from '../types';
 import UserAvatar from './UserAvatar';
 import UserBadges from './UserBadges';
 import { CloseIcon, SearchIcon, PlusIcon } from './Icons';
+import Modal from './Modal';
 import './CreateGroupDMModal.css';
 
 interface CreateGroupDMModalProps {
@@ -18,8 +19,6 @@ const CreateGroupDMModal: React.FC<CreateGroupDMModalProps> = ({ isOpen, onClose
     const [searchQuery, setSearchQuery] = useState('');
     const [groupName, setGroupName] = useState('');
     const [loading, setLoading] = useState(false);
-
-    if (!isOpen) return null;
 
     const filteredFriends = friends.filter(f =>
         f.username.toLowerCase().includes(searchQuery.toLowerCase()) &&
@@ -53,83 +52,79 @@ const CreateGroupDMModal: React.FC<CreateGroupDMModalProps> = ({ isOpen, onClose
     };
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="create-group-modal glass-panel-base" onClick={e => e.stopPropagation()}>
-                <div className="modal-header">
-                    <div className="header-title">
-                        <h2>Создать группу</h2>
-                        <p>{selectedUsers.length}/10 участников</p>
-                    </div>
-                    <button className="close-button" onClick={onClose}><CloseIcon size={20} /></button>
-                </div>
-
-                <div className="modal-content">
-                    <div className="group-name-input-wrapper">
-                        <input
-                            type="text"
-                            placeholder="Название группы (необязательно)"
-                            value={groupName}
-                            onChange={e => setGroupName(e.target.value)}
-                            className="group-name-input"
-                        />
-                    </div>
-
-                    <div className="search-wrapper">
-                        <SearchIcon size={16} className="search-icon" />
-                        <input
-                            type="text"
-                            placeholder="Поиск друзей..."
-                            value={searchQuery}
-                            onChange={e => setSearchQuery(e.target.value)}
-                            className="user-search-input"
-                        />
-                    </div>
-
-                    {selectedUsers.length > 0 && (
-                        <div className="selected-users-list custom-scrollbar">
-                            {selectedUsers.map(u => (
-                                <div key={u._id} className="selected-user-tag" onClick={() => toggleUser(u)}>
-                                    <span>{u.username}</span>
-                                    <CloseIcon size={12} />
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    <div className="friends-selection-list custom-scrollbar">
-                        {filteredFriends.length === 0 ? (
-                            <div className="empty-friends-search">
-                                {searchQuery ? 'Друзья не найдены' : 'Список друзей пуст'}
-                            </div>
-                        ) : (
-                            filteredFriends.map(f => (
-                                <div key={f._id} className="user-selection-item" onClick={() => toggleUser(f)}>
-                                    <div className="user-info">
-                                        <UserAvatar user={f} size={32} />
-                                        <span className="username">{f.username}</span>
-                                        <UserBadges badges={f.badges} size={12} />
-                                    </div>
-                                    <div className={`checkbox ${selectedUsers.some(u => u._id === f._id) ? 'checked' : ''}`}>
-                                        {selectedUsers.some(u => u._id === f._id) && <div style={{ transform: 'rotate(45deg)', display: 'flex' }}><PlusIcon size={12} /></div>}
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </div>
-
-                <div className="modal-footer">
-                    <button className="cancel-btn" onClick={onClose}>Отмена</button>
+        <Modal
+            open={isOpen}
+            onClose={onClose}
+            title="Создать группу"
+            subtitle={`${selectedUsers.length}/10 участников`}
+            size="md"
+            className="create-group-modal"
+            footer={
+                <>
+                    <button className="zv-btn zv-btn--ghost" onClick={onClose}>Отмена</button>
                     <button
-                        className="create-btn"
+                        className="zv-btn zv-btn--primary"
                         onClick={handleCreate}
                         disabled={selectedUsers.length === 0 || loading}
                     >
                         {loading ? 'Создание...' : 'Создать группу'}
                     </button>
-                </div>
+                </>
+            }
+        >
+            <div className="group-name-input-wrapper">
+                <input
+                    type="text"
+                    placeholder="Название группы (необязательно)"
+                    value={groupName}
+                    onChange={e => setGroupName(e.target.value)}
+                    className="group-name-input"
+                />
             </div>
-        </div>
+
+            <div className="search-wrapper">
+                <SearchIcon size={16} className="search-icon" />
+                <input
+                    type="text"
+                    placeholder="Поиск друзей..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="user-search-input"
+                />
+            </div>
+
+            {selectedUsers.length > 0 && (
+                <div className="selected-users-list custom-scrollbar">
+                    {selectedUsers.map(u => (
+                        <div key={u._id} className="selected-user-tag" onClick={() => toggleUser(u)}>
+                            <span>{u.username}</span>
+                            <CloseIcon size={12} />
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <div className="friends-selection-list custom-scrollbar">
+                {filteredFriends.length === 0 ? (
+                    <div className="empty-friends-search">
+                        {searchQuery ? 'Друзья не найдены' : 'Список друзей пуст'}
+                    </div>
+                ) : (
+                    filteredFriends.map(f => (
+                        <div key={f._id} className="user-selection-item" onClick={() => toggleUser(f)}>
+                            <div className="user-info">
+                                <UserAvatar user={f} size={32} />
+                                <span className="username">{f.username}</span>
+                                <UserBadges badges={f.badges} size={12} />
+                            </div>
+                            <div className={`checkbox ${selectedUsers.some(u => u._id === f._id) ? 'checked' : ''}`}>
+                                {selectedUsers.some(u => u._id === f._id) && <div style={{ transform: 'rotate(45deg)', display: 'flex' }}><PlusIcon size={12} /></div>}
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+        </Modal>
     );
 };
 

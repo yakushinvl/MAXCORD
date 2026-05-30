@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { getAvatarUrl } from '../utils/avatar';
 import { useAuth } from '../contexts/AuthContext';
+import { BotIcon } from './Icons';
 import './UserAvatar.css';
 
 interface UserAvatarProps {
@@ -12,7 +13,9 @@ interface UserAvatarProps {
     } | null | undefined;
     size?: number;
     animate?: boolean; // Force animation (e.g., in voice chat)
+    isBot?: boolean;
     className?: string;
+    style?: React.CSSProperties;
     onClick?: (e: React.MouseEvent) => void;
     onContextMenu?: (e: React.MouseEvent) => void;
 }
@@ -21,7 +24,9 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     user,
     size = 40,
     animate = false,
+    isBot = false,
     className = '',
+    style,
     onClick,
     onContextMenu
 }) => {
@@ -83,10 +88,23 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
 
     if (!avatarUrl) {
         const isGroup = user === null;
+        // Check if it's a bot by checking the user object
+        const isBot = user && (user as any).isBot;
+        
         return (
             <div
                 className={`avatar-placeholder ${className} ${isGroup ? 'group-avatar' : ''}`}
-                style={{ width: size, height: size, fontSize: size * 0.45 }}
+                style={{ 
+                    width: size, 
+                    height: size, 
+                    fontSize: size * 0.45,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: style?.borderRadius || '50%',
+                    flexShrink: 0,
+                    ...style
+                }}
                 onClick={onClick}
                 onContextMenu={onContextMenu}
             >
@@ -97,6 +115,8 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
                         <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
+                ) : isBot ? (
+                    <BotIcon size={size * 0.6} color="black" />
                 ) : firstLetter}
             </div>
         );
@@ -107,7 +127,12 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     return (
         <div
             className={`user-avatar-container ${className}`}
-            style={{ width: size, height: size }}
+            style={{ 
+                width: size, 
+                height: size,
+                borderRadius: style?.borderRadius || '50%',
+                ...style 
+            }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             onClick={onClick}

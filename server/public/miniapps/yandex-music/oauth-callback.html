@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>OAuth</title></head>
+<body style="font-family:sans-serif;background:#0f0f12;color:#eee;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
+<div style="text-align:center"><h3>Авторизация прошла успешно</h3><p>Можно закрыть это окно.</p></div>
+<script>
+// The MAXCORD SDK's oauthPopup polls this window's URL until it becomes same-origin
+// and then resolves with { hash, search }. Nothing else needs to happen here —
+// the parent mini-app reads access_token from the hash.
+setTimeout(()=>{ try { window.close(); } catch(e){} }, 800);
+</script>
+</body></html>

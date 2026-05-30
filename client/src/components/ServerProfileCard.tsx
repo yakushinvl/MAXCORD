@@ -5,6 +5,13 @@ import { getAvatarUrl } from '../utils/avatar';
 import { useDialog } from '../contexts/DialogContext';
 import { CloseIcon } from './Icons';
 import UserBadges from './UserBadges';
+import { motion } from 'framer-motion';
+import {
+  popoverVariants,
+  popoverTransition,
+  modalPopVariants,
+  modalPopTransition,
+} from '../animations/transitions';
 import './ServerProfileCard.css';
 
 
@@ -58,7 +65,7 @@ const ServerProfileCard: React.FC<ServerProfileCardProps> = ({ server, onClose, 
 
     return (
         <div className={`server-profile-overlay ${position ? 'transparent' : ''}`} onClick={onClose}>
-            <div
+            <motion.div
                 className={`server-profile-card ${position ? 'popout' : ''}`}
                 onClick={e => e.stopPropagation()}
                 style={position ? {
@@ -66,9 +73,13 @@ const ServerProfileCard: React.FC<ServerProfileCardProps> = ({ server, onClose, 
                     top: adjustedPos.top,
                     left: adjustedPos.left,
                     visibility: isVisible ? 'visible' : 'hidden',
-                    opacity: isVisible ? 1 : 0
+                    transformOrigin: `${Math.max(0, position.x - adjustedPos.left)}px ${Math.max(0, position.y - adjustedPos.top)}px`,
                 } : undefined}
                 ref={cardRef}
+                variants={position ? popoverVariants : modalPopVariants}
+                initial="initial"
+                animate={position ? (isVisible ? 'animate' : 'initial') : 'animate'}
+                transition={position ? popoverTransition : modalPopTransition}
             >
                 <div
                     className="server-profile-banner"
@@ -149,7 +160,7 @@ const ServerProfileCard: React.FC<ServerProfileCardProps> = ({ server, onClose, 
                         </button>
                     </div>
                 </div>
-            </div>
+            </motion.div>
         </div>
     );
 };

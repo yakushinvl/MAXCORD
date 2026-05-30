@@ -15,17 +15,17 @@
     width: 340px;
     background: rgba(10, 10, 10, 0.6);
     backdrop-filter: blur(25px) saturate(180%);
-    border-radius: 16px;
-    padding: 16px;
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
     display: flex;
-    gap: 15px;
+    gap: var(--space-3);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border);
     cursor: pointer;
     pointer-events: auto;
     animation: notificationEntrance 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     transform-origin: top right;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, border-color 0.2s ease;
     overflow: hidden;
 }
 
@@ -68,14 +68,13 @@
     width: 44px;
     height: 44px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--primary-neon), #00aaff);
+    background: linear-gradient(135deg, var(--primary-neon), var(--secondary-neon));
     display: flex;
     align-items: center;
     justify-content: center;
-    color: black;
-    font-weight: 800;
+    color: white;
+    font-weight: 600;
     font-size: 18px;
-    box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
 }
 
 /* CONTENT */
@@ -129,7 +128,7 @@
 }
 
 .notification-close:hover {
-    color: #ff3b30;
+    color: var(--danger);
     background: rgba(255, 59, 48, 0.2);
 }
 
@@ -151,7 +150,7 @@
 }
 
 .notification-toast.success {
-    border-left: 3px solid #34c759;
+    border-left: 3px solid var(--success);
 }
 
 .notification-toast.success::after {
@@ -161,13 +160,13 @@
     left: 0;
     bottom: 0;
     width: 60px;
-    background: linear-gradient(90deg, #34c759, transparent);
+    background: linear-gradient(90deg, var(--success), transparent);
     opacity: 0.05;
     pointer-events: none;
 }
 
 .notification-toast.error {
-    border-left: 3px solid #ff3b30;
+    border-left: 3px solid var(--danger);
 }
 
 .notification-toast.error::after {
@@ -177,13 +176,13 @@
     left: 0;
     bottom: 0;
     width: 60px;
-    background: linear-gradient(90deg, #ff3b30, transparent);
+    background: linear-gradient(90deg, var(--danger), transparent);
     opacity: 0.05;
     pointer-events: none;
 }
 
 .notification-toast.warning {
-    border-left: 3px solid #ffcc00;
+    border-left: 3px solid var(--warning);
 }
 
 .notification-toast.warning::after {
@@ -193,7 +192,7 @@
     left: 0;
     bottom: 0;
     width: 60px;
-    background: linear-gradient(90deg, #ffcc00, transparent);
+    background: linear-gradient(90deg, var(--warning), transparent);
     opacity: 0.05;
     pointer-events: none;
 }

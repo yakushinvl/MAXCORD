@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useIsPresent } from 'framer-motion';
 import { useVoice, useVoiceLevels } from '../contexts/VoiceContext';
 import { Channel, User, Server } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,6 +13,8 @@ import MemberContextMenu from './MemberContextMenu';
 import UserAvatar from './UserAvatar';
 import UserBadges from './UserBadges';
 import SharedYouTubePlayer from './SharedYouTubePlayer';
+import PresenceTile from './PresenceTile';
+import './panel-hero.css';
 import './VoiceChannelView.css';
 
 interface VoiceChannelViewProps {
@@ -261,6 +264,11 @@ const VoiceStreamCard: React.FC<{
   };
 
 const VoiceChannelView: React.FC<VoiceChannelViewProps> = ({ channel, server, onUserClick, onMessageClick, onCallClick, onBack, isMobile }) => {
+  // The portaled control bar (#voice-controls-portal) needs to disappear the
+  // instant the user switches to another channel, even though framer-motion
+  // keeps this component mounted during its section exit animation. `useIsPresent`
+  // flips to false as soon as the component enters its exit phase.
+  const isPresent = useIsPresent();
   const { user: currentUser } = useAuth();
   const { socket, connected } = useSocket();
   const {
@@ -287,7 +295,13 @@ const VoiceChannelView: React.FC<VoiceChannelViewProps> = ({ channel, server, on
     remoteStreams,
     isVideoOn,
     toggleVideo,
-    localCameraStream
+    localCameraStream,
+    voicePresences,
+    presenceAudioStreams,
+    presenceVideoStreams,
+    sendPresenceControl,
+    presenceVolumes,
+    setPresenceVolume,
   } = useVoice();
   const { speakingUsers = new Set<string>() } = useVoiceLevels() || {};
 
@@ -442,7 +456,7 @@ const VoiceChannelView: React.FC<VoiceChannelViewProps> = ({ channel, server, on
         }
 
         const state = userStates.get(u._id);
-        if (state?.isScreenSharing && remoteScreenStreams.has(u._id)) {
+        if (state?.isScreenSharing) {
           items.push({ _id: `stream-${u._id}`, userId: u._id, type: 'stream', isMe: false });
         }
       });
@@ -484,7 +498,7 @@ const VoiceChannelView: React.FC<VoiceChannelViewProps> = ({ channel, server, on
           }
           seenIds.add(userId);
 
-          if (state.isScreenSharing && remoteScreenStreams.has(userId)) {
+          if (state.isScreenSharing) {
             items.push({ _id: `stream-${userId}`, userId: userId, type: 'stream', isMe: false });
           }
         }
@@ -503,7 +517,7 @@ const VoiceChannelView: React.FC<VoiceChannelViewProps> = ({ channel, server, on
           cameraStream: null, // Don't preview video if not connected
           type: 'user'
         });
-        if (state.isScreenSharing && remoteScreenStreams.has(u._id)) {
+        if (state.isScreenSharing) {
           items.push({ _id: `stream-${u._id}`, userId: u._id, type: 'stream', isMe: false });
         }
       });
@@ -513,8 +527,16 @@ const VoiceChannelView: React.FC<VoiceChannelViewProps> = ({ channel, server, on
       items.push({ _id: 'youtube-watch', type: 'youtube', ...ytSession });
     }
 
+    // Virtual mini-app presences for this channel
+    const channelKey = 'channel-' + channel._id;
+    for (const p of voicePresences.values()) {
+      if (p.channelId === channelKey) {
+        items.push({ _id: 'presence-' + p.sessionId, type: 'presence', presence: p });
+      }
+    }
+
     return items;
-  }, [isConnectedToThisChannel, currentUser, activeConnectedUsers, isMuted, isDeafened, isScreenSharing, isVideoOn, localCameraStream, externalParticipants, userStates, remoteScreenStreams, remoteStreams, ytSession]);
+  }, [isConnectedToThisChannel, currentUser, activeConnectedUsers, isMuted, isDeafened, isScreenSharing, isVideoOn, localCameraStream, externalParticipants, userStates, remoteScreenStreams, remoteStreams, ytSession, voicePresences, channel._id]);
 
   useEffect(() => {
     if (!isConnectedToThisChannel) {
@@ -563,6 +585,20 @@ const VoiceChannelView: React.FC<VoiceChannelViewProps> = ({ channel, server, on
       );
     }
 
+    if (item.type === 'presence') {
+      const p = item.presence;
+      return (
+        <PresenceTile
+          key={item._id}
+          presence={p}
+          videoStream={presenceVideoStreams.get(p.sessionId)}
+          volume={presenceVolumes.get(p.sessionId) ?? 1}
+          onVolumeChange={(v) => setPresenceVolume(p.sessionId, v)}
+          onControl={(controlId, value) => sendPresenceControl(p.channelId, p.sessionId, controlId, value)}
+        />
+      );
+    }
+
     if (item.type === 'youtube') {
       const isExpanded = expandedStreamId === 'youtube-watch';
       return (
@@ -603,7 +639,12 @@ const VoiceChannelView: React.FC<VoiceChannelViewProps> = ({ channel, server, on
   const focusedItem = focusedStreamId ? displayParticipants.find(p => p._id === focusedStreamId) : null;
 
   return (
-    <div className="voice-channel-view" ref={viewRef}>
+    <div className="voice-channel-view panel-hero" ref={viewRef}>
+      <div className="panel-hero-bg" aria-hidden="true">
+        <div className="blob cyan" />
+        <div className="blob purple" />
+        <div className="blob pink" />
+      </div>
       <header className="voice-hdr">
         <div className="hdr-left">
           {isMobile && (
@@ -667,7 +708,7 @@ const VoiceChannelView: React.FC<VoiceChannelViewProps> = ({ channel, server, on
         )}
       </main>
 
-      {createPortal(
+      {isPresent && createPortal(
         <div className="voice-ctrls-anchor" style={ctrlsRect ? {
           position: 'fixed',
           bottom: window.innerHeight - ctrlsRect.bottom,

@@ -7,6 +7,7 @@ import './Landing.css';
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [actualEmail, setActualEmail] = useState(''); // Store the real email from server response
   const [code, setCode] = useState('');
   const [mode, setMode] = useState<'login' | 'mfa' | 'forgot' | 'reset'>('login');
   const [error, setError] = useState('');
@@ -70,7 +71,7 @@ const Login: React.FC = () => {
         return;
       }
       try {
-        await verifyLogin(email, code);
+        await verifyLogin(actualEmail || email, code);
         const searchParams = new URLSearchParams(window.location.search);
         const returnTo = searchParams.get('returnTo');
         navigate(returnTo || '/');
@@ -128,6 +129,7 @@ const Login: React.FC = () => {
     try {
       const data = await login(email.trim(), password);
       if (data.requires2FA) {
+        setActualEmail(data.email); // Use email from server response
         handleModeChange('mfa');
         setSuccess('Код подтверждения отправлен на вашу почту');
       } else if (data.token) {
@@ -136,9 +138,7 @@ const Login: React.FC = () => {
         navigate(returnTo || '/');
       }
     } catch (err: any) {
-      if (err.response?.status === 403 && err.response?.data?.requiresVerification) {
-        setError('Почта не подтверждена. Пожалуйста, проверьте ваш почтовый ящик.');
-      } else if (err.response?.data?.errors) {
+      if (err.response?.data?.errors) {
         const validationErrors = err.response.data.errors.map((e: any) => e.msg).join(', ');
         setError(validationErrors);
       } else {

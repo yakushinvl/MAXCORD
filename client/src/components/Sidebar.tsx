@@ -1,12 +1,22 @@
 import React, { useState } from 'react';
-import { User, Server } from '../types';
+import { motion, AnimatePresence } from 'framer-motion';
+import { User, Server, MiniApp } from '../types';
 import SettingsModal from './SettingsModal';
 import JoinServerModal from './JoinServerModal';
 import { getAvatarUrl } from '../utils/avatar';
 import UserAvatar from './UserAvatar';
 import { UsersIcon, PlusIcon, SettingsIcon, BellIcon, LayoutGridIcon } from './Icons';
 import ServerContextMenu from './ServerContextMenu';
+import { iosSpringSnappy } from '../animations/transitions';
+import './panel-hero.css';
 import './Sidebar.css';
+
+// iOS-style press feedback shared across every clickable server-icon button.
+const pressFeedback = {
+  whileTap: { scale: 0.88 },
+  whileHover: { scale: 1.06 },
+  transition: iosSpringSnappy,
+};
 
 interface SidebarProps {
   user: User;
@@ -27,6 +37,9 @@ interface SidebarProps {
   onOpenProfile: (userId: string, event?: React.MouseEvent) => void;
   onToggleInbox: () => void;
   inboxUnreadCount: number;
+  minimizedMiniApps?: MiniApp[];
+  onRestoreMiniApp?: (appId: string) => void;
+  onCloseMiniApp?: (appId: string) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -47,7 +60,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   onOpenSettings,
   onOpenProfile,
   onToggleInbox,
-  inboxUnreadCount
+  inboxUnreadCount,
+  minimizedMiniApps = [],
+  onRestoreMiniApp,
+  onCloseMiniApp,
 }) => {
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, server: Server } | null>(null);
 
@@ -57,51 +73,130 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <div className="sidebar">
+    <div className="sidebar panel-hero">
+      <div className="panel-hero-bg" aria-hidden="true">
+        <div className="blob cyan" />
+        <div className="blob purple" />
+        <div className="blob pink" />
+      </div>
       <div className="sidebar-servers">
-        <div className="server-icon inbox-sidebar-icon" onClick={onToggleInbox} title="Уведомления">
-          <BellIcon size={28} color="var(--secondary-neon)" />
-          {inboxUnreadCount > 0 && <div className="unread-badge">{inboxUnreadCount > 9 ? '9+' : inboxUnreadCount}</div>}
-        </div>
-        <div className={`server-icon home-icon ${showFriends && !selectedServer ? 'active' : ''}`} onClick={onShowFriends} title="Друзья">
-          <UsersIcon size={28} />
-          {Object.entries(unreadCounts).some(([id, count]) => count > 0 && !servers.some(s => s.channels.some(c => c._id === id))) && (
-            <div className="unread-badge"></div>
-          )}
-        </div>
-        <div className={`server-icon home-icon ${showShowcase ? 'active' : ''}`} onClick={onShowShowcase} title="Витрина ботов и мини-приложений">
-          <LayoutGridIcon size={28} />
-        </div>
-        <div className="server-icon home-icon" onClick={onOpenJoinModal} title="Добавить сервер">
-          <PlusIcon size={28} color="var(--primary-neon)" />
-        </div>
-        <div className="sidebar-divider" />
-        {servers.map((server) => (
-          <div
-            key={server._id}
-            className={`server-icon ${selectedServer?._id === server._id ? 'active' : ''}`}
-            onClick={() => onServerSelect(server)}
-            onContextMenu={(e) => handleContextMenu(e, server)}
-            title={server.name}
+        <div className="server-item">
+          <div className="pill"><span /></div>
+          <motion.div
+            className="server-icon inbox-sidebar-icon"
+            onClick={onToggleInbox}
+            title="Уведомления"
+            {...pressFeedback}
           >
-            <UserAvatar
-              user={{ username: server.name, avatar: server.icon }}
-              size={48}
-              className="server-icon-avatar"
-            />
-            {server.channels.some(c => unreadCounts[c._id] > 0) && (
+            <BellIcon size={28} color="var(--secondary-neon)" />
+            {inboxUnreadCount > 0 && <div className="unread-badge">{inboxUnreadCount > 9 ? '9+' : inboxUnreadCount}</div>}
+          </motion.div>
+        </div>
+
+        <div className={`server-item ${showFriends ? 'active' : ''}`}>
+          <div className="pill"><span /></div>
+          <motion.div
+            className={`server-icon friends-sidebar-icon ${showFriends ? 'active' : ''}`}
+            onClick={onShowFriends}
+            title="Друзья"
+            {...pressFeedback}
+          >
+            <UsersIcon size={28} />
+            {Object.entries(unreadCounts).some(([id, count]) => count > 0 && !servers.some(s => s.channels.some(c => c._id === id))) && (
               <div className="unread-badge"></div>
             )}
+          </motion.div>
+        </div>
+
+        <div className={`server-item ${showShowcase ? 'active' : ''}`}>
+          <div className="pill"><span /></div>
+          <motion.div
+            className={`server-icon showcase-sidebar-icon ${showShowcase ? 'active' : ''}`}
+            onClick={onShowShowcase}
+            title="Витрина ботов и мини-приложений"
+            {...pressFeedback}
+          >
+            <LayoutGridIcon size={28} color="var(--accent-pink)" />
+          </motion.div>
+        </div>
+
+        <AnimatePresence>
+          {minimizedMiniApps.map(app => (
+            <motion.div
+              key={app._id}
+              className="server-item"
+              initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+              animate={{ opacity: 1, height: 'auto', marginBottom: 0 }}
+              exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+              transition={{ type: 'spring', stiffness: 360, damping: 32 }}
+            >
+              <div className="pill"><span /></div>
+              <motion.div
+                className="server-icon miniapp-minimized-icon"
+                onClick={() => onRestoreMiniApp?.(app._id)}
+                onContextMenu={(e) => { e.preventDefault(); onCloseMiniApp?.(app._id); }}
+                title={`${app.name} — нажми чтобы развернуть, ПКМ — закрыть`}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                whileTap={{ scale: 0.88 }}
+                whileHover={{ scale: 1.06 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 36, mass: 0.7 }}
+              >
+                {app.avatar ? (
+                  <img src={getAvatarUrl(app.avatar) || ''} alt={app.name} />
+                ) : (
+                  <LayoutGridIcon size={24} color="var(--accent-pink)" />
+                )}
+              </motion.div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
+        <div className="server-item">
+          <div className="pill"><span /></div>
+          <motion.div
+            className="server-icon home-icon"
+            onClick={onOpenJoinModal}
+            title="Добавить сервер"
+            {...pressFeedback}
+          >
+            <PlusIcon size={28} color="var(--primary-neon)" />
+          </motion.div>
+        </div>
+
+        <div className="sidebar-divider" />
+        
+        {Array.isArray(servers) && servers.map((server) => (
+          <div key={server._id} className={`server-item ${selectedServer?._id === server._id ? 'active' : ''}`}>
+            <div className="pill"><span /></div>
+            <motion.div
+              className={`server-icon ${selectedServer?._id === server._id ? 'active' : ''}`}
+              onClick={() => onServerSelect(server)}
+              onContextMenu={(e) => handleContextMenu(e, server)}
+              title={server.name}
+              {...pressFeedback}
+            >
+              <UserAvatar
+                user={{ username: server.name, avatar: server.icon }}
+                size={48}
+                className="server-icon-avatar"
+              />
+              {server.channels.some(c => unreadCounts[c._id] > 0) && (
+                <div className="unread-badge"></div>
+              )}
+            </motion.div>
           </div>
         ))}
       </div>
 
       <div className="sidebar-user">
-        <div
+        <motion.div
           className="user-avatar-wrapper"
           title={`${user.username} (${user.status})`}
           onClick={(e) => onOpenProfile(user._id, e)}
           style={{ position: 'relative' }}
+          {...pressFeedback}
         >
           <UserAvatar
             user={user}
@@ -109,10 +204,17 @@ const Sidebar: React.FC<SidebarProps> = ({
             className="user-avatar"
           />
           <div className={`status-indicator ${user.status}`}></div>
-        </div>
-        <button className="logout-button" onClick={onOpenSettings} title="Настройки">
+        </motion.div>
+        <motion.button
+          className="logout-button"
+          onClick={onOpenSettings}
+          title="Настройки"
+          whileTap={{ scale: 0.88, rotate: 30 }}
+          whileHover={{ scale: 1.08, rotate: -8 }}
+          transition={iosSpringSnappy}
+        >
           <SettingsIcon size={20} />
-        </button>
+        </motion.button>
       </div>
 
 

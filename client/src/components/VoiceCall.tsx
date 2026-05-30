@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Socket } from 'socket.io-client';
 import axios from 'axios';
 import { User } from '../types';
@@ -42,59 +43,18 @@ const RemoteAudioPlayer: React.FC<{
   muted: boolean;
 }> = ({ stream, volume, muted }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const gainNodeRef = useRef<GainNode | null>(null);
 
   useEffect(() => {
     if (!stream) return;
     const audio = audioRef.current;
     if (!audio) return;
-
-    try {
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
-      const ctx = audioCtxRef.current;
-      if (ctx.state === 'suspended') {
-        ctx.resume().catch(() => { });
-      }
-
-      const source = ctx.createMediaStreamSource(stream);
-      const gain = ctx.createGain();
-      const dest = ctx.createMediaStreamDestination();
-
-      source.connect(gain);
-      gain.connect(dest);
-      gainNodeRef.current = gain;
-
-      audio.srcObject = dest.stream;
-      audio.muted = false; // Ensure not muted
-      audio.play().catch((e) => {
-        // Fallback directly to stream if play fails
-        if (e.name === 'NotAllowedError') {
-          console.warn('[RemoteAudio] Autoplay blocked, trying again');
-          audio.srcObject = stream;
-          audio.play().catch(() => { });
-        }
-      });
-    } catch (e) {
-      audio.srcObject = stream;
-      audio.play().catch(() => { });
-    }
-
-    return () => {
-      audioCtxRef.current?.close().catch(() => { });
-      audioCtxRef.current = null;
-    };
+    audio.srcObject = stream;
+    audio.muted = false;
+    audio.play().catch(() => { });
   }, [stream]);
 
   useEffect(() => {
-    if (gainNodeRef.current) {
-      const v = muted ? 0 : volume;
-      // Use 0.05s ramp for smoothness
-      gainNodeRef.current.gain.setTargetAtTime(v, audioCtxRef.current?.currentTime || 0, 0.05);
-      if (audioRef.current) audioRef.current.volume = 1;
-    } else if (audioRef.current) {
+    if (audioRef.current) {
       audioRef.current.volume = Math.min(Math.max(muted ? 0 : volume, 0), 1);
     }
   }, [volume, muted]);
@@ -121,6 +81,7 @@ const VoiceCall: React.FC<VoiceCallProps> = ({
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
   const [showScreenSelector, setShowScreenSelector] = useState(false);
   const [remoteScreenStreams, setRemoteScreenStreams] = useState<Map<string, MediaStream>>(new Map());
+  const [remoteSharingScreen, setRemoteSharingScreen] = useState<Set<string>>(new Set());
   const [watchingParticipants, setWatchingParticipants] = useState<Set<string>>(new Set());
   const [participantsMetadata, setParticipantsMetadata] = useState<Map<string, User>>(new Map());
 
@@ -223,8 +184,10 @@ const VoiceCall: React.FC<VoiceCallProps> = ({
     };
   }, [socket, dmId, isGroup]);
 
+  const joiningRoomRef = useRef(false);
   const joinLiveKitRoom = async () => {
-    if (roomRef.current) return;
+    if (roomRef.current || joiningRoomRef.current) return;
+    joiningRoomRef.current = true;
     try {
       const { data } = await axios.get('/api/livekit/token', {
         params: {
@@ -258,10 +221,40 @@ const VoiceCall: React.FC<VoiceCallProps> = ({
             next.delete(participant.identity);
             return next;
           });
+          setRemoteScreenStreams(prev => {
+            const next = new Map(prev);
+            next.delete(participant.identity);
+            return next;
+          });
+          setRemoteSharingScreen(prev => {
+            const next = new Set(prev);
+            next.delete(participant.identity);
+            return next;
+          });
+          setWatchingParticipants(prev => {
+            const next = new Set(prev);
+            next.delete(participant.identity);
+            return next;
+          });
         })
         .on(RoomEvent.TrackPublished, (publication, participant) => {
           if (publication.source === Track.Source.ScreenShare) {
+            setRemoteSharingScreen(prev => new Set(prev).add(participant.identity));
             publication.setSubscribed(false);
+          }
+        })
+        .on(RoomEvent.TrackUnpublished, (publication, participant) => {
+          if (publication.source === Track.Source.ScreenShare) {
+            setRemoteSharingScreen(prev => {
+              const next = new Set(prev);
+              next.delete(participant.identity);
+              return next;
+            });
+            setWatchingParticipants(prev => {
+              const next = new Set(prev);
+              next.delete(participant.identity);
+              return next;
+            });
           }
         })
         .on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
@@ -319,7 +312,18 @@ const VoiceCall: React.FC<VoiceCallProps> = ({
         });
 
       await room.connect(serverUrl, token);
-      setRemoteParticipants(Array.from(room.remoteParticipants.values()));
+      const existingParticipants = Array.from(room.remoteParticipants.values());
+      setRemoteParticipants(existingParticipants);
+      const alreadySharing = new Set<string>();
+      existingParticipants.forEach(p => {
+        p.trackPublications.forEach(pub => {
+          if (pub.source === Track.Source.ScreenShare) {
+            alreadySharing.add(p.identity);
+            try { (pub as RemoteTrackPublication).setSubscribed(false); } catch { }
+          }
+        });
+      });
+      if (alreadySharing.size) setRemoteSharingScreen(prev => new Set([...prev, ...alreadySharing]));
 
       await room.localParticipant.setMicrophoneEnabled(true);
       if (isVideoEnabled) await room.localParticipant.setCameraEnabled(true);
@@ -329,7 +333,11 @@ const VoiceCall: React.FC<VoiceCallProps> = ({
 
       setIsCallActive(true);
       wasCallEstablishedRef.current = true;
-    } catch (e) { console.error('[DM Voice] LiveKit join error:', e); }
+    } catch (e) {
+      console.error('[DM Voice] LiveKit join error:', e);
+    } finally {
+      joiningRoomRef.current = false;
+    }
   };
 
   const acceptCall = async () => {
@@ -442,7 +450,13 @@ const VoiceCall: React.FC<VoiceCallProps> = ({
 
   if (isIncomingCall) {
     return (
-      <div className="voice-call-notification">
+      <motion.div
+        className="voice-call-notification"
+        initial={{ opacity: 0, y: -32, scale: 0.92 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -16, scale: 0.96 }}
+        transition={{ type: 'spring', stiffness: 360, damping: 32, mass: 0.9 }}
+      >
         <div className="notification-content">
           <div className="notification-avatar">
             <UserAvatar user={isGroup ? null : otherUser} size={48} />
@@ -455,18 +469,24 @@ const VoiceCall: React.FC<VoiceCallProps> = ({
             <div className="notification-status">Входящий звонок...</div>
           </div>
           <div className="notification-actions">
-            <button className="accept-btn" onClick={acceptCall}><CheckIcon color="black" /></button>
-            <button className="reject-btn" onClick={endCall}><CloseIcon color="white" size={20} /></button>
+            <motion.button className="accept-btn" onClick={acceptCall} whileTap={{ scale: 0.9 }} whileHover={{ scale: 1.06 }} transition={{ type: 'spring', stiffness: 480, damping: 36, mass: 0.7 }}><CheckIcon color="black" /></motion.button>
+            <motion.button className="reject-btn" onClick={endCall} whileTap={{ scale: 0.9 }} whileHover={{ scale: 1.06 }} transition={{ type: 'spring', stiffness: 480, damping: 36, mass: 0.7 }}><CloseIcon color="white" size={20} /></motion.button>
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   const anyRemoteScreenSharing = remoteScreenStreams.size > 0 || isScreenSharing;
 
   return (
-    <div className={`voice-call-full-view ${isGroup ? 'group-mode' : ''}`}>
+    <motion.div
+      className={`voice-call-full-view ${isGroup ? 'group-mode' : ''}`}
+      initial={{ opacity: 0, scale: 0.97 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.98 }}
+      transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+    >
       <header className="call-topbar">
         <div className="call-topbar-left">
           <button className="back-to-app-btn" onClick={onEndCall} title="Свернуть">
@@ -482,14 +502,24 @@ const VoiceCall: React.FC<VoiceCallProps> = ({
 
       <main className="call-main">
         <div className={`video-grid count-${allParticipants.length} ${anyRemoteScreenSharing ? 'has-screenshare' : ''}`}>
+          <AnimatePresence initial={false}>
           {allParticipants.map((p) => {
             const stream = p.isLocal ? (isVideoEnabled ? localStream : null) : remoteStreams.get(p.identity);
             const userMeta = p.isMe ? user : (isGroup ? participantsMetadata.get(p.identity) : otherUser);
             const isSpeaking = speakingUsers.has(p.identity) || (p.isMe && localSpeaking);
             const screenShare = p.isLocal ? (isScreenSharing ? screenStream : null) : remoteScreenStreams.get(p.identity);
+            const hasRemoteScreenShare = !p.isLocal && remoteSharingScreen.has(p.identity);
 
             return (
-              <div key={p.identity} className={`participant-slot ${isSpeaking ? 'speaking' : ''} ${screenShare ? 'sharing-screen' : ''}`}>
+              <motion.div
+                key={p.identity}
+                layout
+                className={`participant-slot ${isSpeaking ? 'speaking' : ''} ${screenShare ? 'sharing-screen' : ''}`}
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ type: 'spring', stiffness: 360, damping: 32, mass: 0.8 }}
+              >
                 {stream && stream.getVideoTracks().length > 0 ? (
                   <video
                     autoPlay playsInline muted={p.isMe}
@@ -507,73 +537,66 @@ const VoiceCall: React.FC<VoiceCallProps> = ({
                 )}
                 {screenShare && (
                   <div className="participant-screenshare">
-                    {!p.isMe && !watchingParticipants.has(p.identity) ? (
-                      <div className="screenshare-watch-overlay">
-                        <div className="watch-overlay-content">
-                          <MonitorIcon size={48} />
-                          <div className="watch-overlay-text">Демонстрация экрана доступна</div>
-                          <button 
-                            className="watch-confirm-btn" 
-                            onClick={() => {
-                              const pub = p.participant?.getTrackPublication(Track.Source.ScreenShare);
-                              if (pub && 'setSubscribed' in pub) (pub as any).setSubscribed(true);
-                              setWatchingParticipants(prev => new Set(prev).add(p.identity));
-                            }}
-                          >
-                            Смотреть трансляцию
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <video 
-                          autoPlay playsInline muted={p.isMe} 
-                          ref={el => { if (el && el.srcObject !== screenShare) el.srcObject = screenShare; }} 
-                        />
-                        {!p.isMe && (
-                          <button 
-                            className="stop-watching-btn"
-                            onClick={() => {
-                                const pub = p.participant?.getTrackPublication(Track.Source.ScreenShare);
-                                if (pub && 'setSubscribed' in pub) (pub as any).setSubscribed(false);
-                                setWatchingParticipants(prev => {
-                                    const next = new Set(prev);
-                                    next.delete(p.identity);
-                                    return next;
-                                });
-                            }}
-                            title="Прекратить просмотр"
-                          >
-                            <CloseIcon size={20} />
-                          </button>
-                        )}
-                      </>
+                    <video
+                      autoPlay playsInline muted={p.isMe}
+                      ref={el => { if (el && el.srcObject !== screenShare) el.srcObject = screenShare; }}
+                    />
+                    {!p.isMe && (
+                      <button
+                        className="stop-watching-btn"
+                        onClick={() => {
+                          const pub = p.participant?.getTrackPublication(Track.Source.ScreenShare);
+                          if (pub && 'setSubscribed' in pub) (pub as any).setSubscribed(false);
+                          setWatchingParticipants(prev => {
+                            const next = new Set(prev);
+                            next.delete(p.identity);
+                            return next;
+                          });
+                        }}
+                        title="Прекратить просмотр"
+                      >
+                        <CloseIcon size={20} />
+                      </button>
                     )}
                   </div>
+                )}
+                {hasRemoteScreenShare && !watchingParticipants.has(p.identity) && !screenShare && (
+                  <button
+                    className="screenshare-available-btn"
+                    onClick={() => {
+                      const pub = p.participant?.getTrackPublication(Track.Source.ScreenShare);
+                      if (pub && 'setSubscribed' in pub) (pub as any).setSubscribed(true);
+                      setWatchingParticipants(prev => new Set(prev).add(p.identity));
+                    }}
+                  >
+                    <MonitorIcon size={16} />
+                    <span>Смотреть демонстрацию</span>
+                  </button>
                 )}
                 <div className="participant-label">
                   {userMeta?.username || p.identity} {p.isMe && '(Вы)'}
                   {userMeta && <UserBadges badges={userMeta.badges} size={12} />}
                 </div>
-              </div>
+              </motion.div>
             );
           })}
+          </AnimatePresence>
         </div>
       </main>
 
       <div className="call-controls-bar">
-        <button className={`control-circle ${isMuted ? 'muted' : ''}`} onClick={toggleMute} title="Микрофон">
+        <motion.button className={`control-circle ${isMuted ? 'muted' : ''}`} onClick={toggleMute} title="Микрофон" whileTap={{ scale: 0.88 }} whileHover={{ scale: 1.06 }} transition={{ type: 'spring', stiffness: 480, damping: 36, mass: 0.7 }}>
           {isMuted ? <MicMutedIcon /> : <MicIcon />}
-        </button>
-        <button className={`control-circle ${isVideoEnabled ? 'active' : ''}`} onClick={toggleVideo} title="Камера">
+        </motion.button>
+        <motion.button className={`control-circle ${isVideoEnabled ? 'active' : ''}`} onClick={toggleVideo} title="Камера" whileTap={{ scale: 0.88 }} whileHover={{ scale: 1.06 }} transition={{ type: 'spring', stiffness: 480, damping: 36, mass: 0.7 }}>
           <CameraIcon />
-        </button>
-        <button className={`control-circle ${isScreenSharing ? 'active' : ''}`} onClick={() => isScreenSharing ? toggleScreenShare() : setShowScreenSelector(true)} title="Экран">
+        </motion.button>
+        <motion.button className={`control-circle ${isScreenSharing ? 'active' : ''}`} onClick={() => isScreenSharing ? toggleScreenShare() : setShowScreenSelector(true)} title="Экран" whileTap={{ scale: 0.88 }} whileHover={{ scale: 1.06 }} transition={{ type: 'spring', stiffness: 480, damping: 36, mass: 0.7 }}>
           {isScreenSharing ? <StopScreenShareIcon size={24} /> : <ScreenShareIcon size={24} />}
-        </button>
-        <button className="control-circle end-call-circle" onClick={endCall} title="Завершить">
+        </motion.button>
+        <motion.button className="control-circle end-call-circle" onClick={endCall} title="Завершить" whileTap={{ scale: 0.88, rotate: -8 }} whileHover={{ scale: 1.06 }} transition={{ type: 'spring', stiffness: 480, damping: 36, mass: 0.7 }}>
           <span style={{ display: 'flex', transform: 'rotate(135deg)' }}><PhoneIcon size={28} /></span>
-        </button>
+        </motion.button>
       </div>
 
       {Array.from(remoteStreams.entries()).map(([uid, stream]) => (
@@ -590,7 +613,7 @@ const VoiceCall: React.FC<VoiceCallProps> = ({
           onSelect={(id, opts) => { toggleScreenShare(id, opts); setShowScreenSelector(false); }}
         />
       )}
-    </div>
+    </motion.div>
   );
 };
 

@@ -1,8 +1,10 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { useInbox, InboxItem } from '../contexts/InboxContext';
 import { TrashIcon, CheckIcon, MailIcon } from './Icons';
 import UserAvatar from './UserAvatar';
 import UserBadges from './UserBadges';
+import { iosSpring } from '../animations/transitions';
 import './Inbox.css';
 
 interface InboxProps {
@@ -30,7 +32,14 @@ const Inbox: React.FC<InboxProps> = ({ onClose, onItemClick }) => {
     };
 
     return (
-        <div className={`inbox-overlay ${isMobile ? 'is-mobile' : ''}`}>
+        <motion.div
+            className={`inbox-overlay ${isMobile ? 'is-mobile' : ''}`}
+            initial={isMobile ? { x: '100%', opacity: 0 } : { x: 24, opacity: 0, scale: 0.98 }}
+            animate={{ x: 0, opacity: 1, scale: 1 }}
+            exit={isMobile ? { x: '100%', opacity: 0 } : { x: 24, opacity: 0, scale: 0.98 }}
+            transition={iosSpring}
+            style={{ transformOrigin: 'top right' }}
+        >
             <div className="inbox-header">
                 {isMobile && (
                     <button className="back-button" onClick={onClose} style={{ marginRight: '12px' }}>
@@ -105,7 +114,7 @@ const Inbox: React.FC<InboxProps> = ({ onClose, onItemClick }) => {
                     ))
                 )}
             </div>
-        </div>
+        </motion.div>
     );
 };
 

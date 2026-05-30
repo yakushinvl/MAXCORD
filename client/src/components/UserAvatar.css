@@ -56,6 +56,8 @@
 }
 
 .avatar-placeholder {
+    width: 100%;
+    height: 100%;
     border-radius: inherit;
     background: linear-gradient(135deg, #444, #222);
     color: white;

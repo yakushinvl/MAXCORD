@@ -1,10 +1,17 @@
-const { app, BrowserWindow, ipcMain, clipboard, Tray, Menu, nativeImage, screen, desktopCapturer, globalShortcut, Notification, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, clipboard, Tray, Menu, nativeImage, screen, desktopCapturer, globalShortcut, Notification, shell, protocol, net } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const isDev = require('electron-is-dev');
 const { autoUpdater } = require('electron-updater');
 const log = require('electron-log');
 const axios = require('axios');
+
+// Register custom protocol for the app to bypass file:// restrictions
+if (!isDev) {
+    protocol.registerSchemesAsPrivileged([
+        { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, allowServiceWorkers: true, corsEnabled: true, stream: true } }
+    ]);
+}
 
 autoUpdater.logger = log;
 autoUpdater.logger.transports.file.level = 'info';
@@ -99,8 +106,12 @@ if (!isDev) {
 
 // Disable the yellow/green border on Windows 10/11 when capturing windows
 // Also disable Vulkan which can cause green screen/flickering on some GPUs
-app.commandLine.appendSwitch('disable-features', 'WinrtCaptureBorders,Vulkan');
+// Added IsolateOrigins and site-per-process to disable-features to fix cross-origin track transfer
+app.commandLine.appendSwitch('disable-features', 'WinrtCaptureBorders,Vulkan,IsolateOrigins,site-per-process');
 app.commandLine.appendSwitch('disable-site-isolation-trials');
+app.commandLine.appendSwitch('disable-web-security');
+app.commandLine.appendSwitch('allow-running-insecure-content');
+app.commandLine.appendSwitch('allow-file-access-from-files');
 
 const stateFilePath = path.join(app.getPath('userData'), 'window-state.json');
 
@@ -125,7 +136,7 @@ function saveWindowState() {
 
 autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = true;
-autoUpdater.setFeedURL({ provider: 'github', owner: 'yakushinvl', repo: 'MAXCORD' });
+autoUpdater.setFeedURL({ provider: 'github', owner: 'pkda1lu', repo: 'maxcord' });
 
 if (process.defaultApp) {
     if (process.argv.length >= 2) app.setAsDefaultProtocolClient('maxcord', process.execPath, [path.resolve(process.argv[1])]);
@@ -155,7 +166,7 @@ if (!app.requestSingleInstanceLock()) {
 }
 
 function createTray() {
-    const iconPath = path.join(__dirname, 'icon.ico');
+    const iconPath = path.join(__dirname, 'logo_256x256.ico');
     const trayIcon = nativeImage.createFromPath(iconPath);
     tray = new Tray(trayIcon);
     updateTrayMenu();
@@ -195,14 +206,12 @@ function updateTrayStatus(state) {
     if (!tray) return;
     currentVoiceState = state;
     const { isMuted, isDeafened, isConnected } = state;
-    let iconName = 'icon.ico';
+    let iconName = 'logo_256x256.ico';
     let statusText = 'MAXCORD - В сети';
 
     if (isDeafened) {
-        iconName = 'icon_deafened.ico';
         statusText = 'MAXCORD - Звук выключен';
     } else if (isMuted) {
-        iconName = 'icon_muted.ico';
         statusText = 'MAXCORD - Микрофон выключен';
     } else if (!isConnected) {
         statusText = 'MAXCORD - Не в голосе';
@@ -292,7 +301,7 @@ function createWindow() {
         autoHideMenuBar: true,
         frame: false,
         backgroundColor: '#1e1f22',
-        icon: path.join(__dirname, 'icon.ico'),
+        icon: path.join(__dirname, 'logo_256x256.ico'),
         show: false // Performance: Use ready-to-show to prevent white flash
     });
     mainWindow.once('ready-to-show', () => {
@@ -373,38 +382,48 @@ function createWindow() {
         }
     );
 
-    // Global Fix: Strip X-Frame-Options and Content-Security-Policy for ALL sites 
-    // to allow any website to be embedded in Mini-Apps.
+    // Final Strike: Robustly strip and replace protection headers
     mainWindow.webContents.session.webRequest.onHeadersReceived(
-        { urls: ['*://*/*'] },
+        { urls: ['*://*/*'] }, // Apply to all URLs to handle frame-ancestors globally
         (details, callback) => {
             const responseHeaders = {};
-            const headersToRemove = [
-                'x-frame-options',
-                'content-security-policy',
-                'frame-options',
-                'access-control-allow-origin',
-                'access-control-allow-headers',
-                'access-control-allow-methods',
-                'access-control-allow-credentials'
-            ];
             
+            // Filter out existing security and CORS headers to prevent duplicates and iframe blocks
             Object.keys(details.responseHeaders).forEach(key => {
                 const lowerKey = key.toLowerCase();
-                if (!headersToRemove.includes(lowerKey)) {
+                if (![
+                    'x-frame-options', 
+                    'content-security-policy', 
+                    'frame-options', 
+                    'access-control-allow-origin',
+                    'access-control-allow-headers',
+                    'access-control-allow-methods',
+                    'access-control-allow-credentials'
+                ].includes(lowerKey)) {
                     responseHeaders[key] = details.responseHeaders[key];
                 }
             });
             
+            // Dynamic mirroring for CORS with Credentials support
             let requestOrigin = details.requestHeaders?.['Origin'] || details.requestHeaders?.['origin'];
-            if (!requestOrigin || requestOrigin === 'null' || requestOrigin === 'file://') {
-                requestOrigin = '*';
+            
+            // Fallback for Electron custom protocols
+            if (!requestOrigin || requestOrigin === 'null' || requestOrigin === 'file://' || requestOrigin.startsWith('app://')) {
+                // If it's a YouTube request, use their origin, otherwise use the request origin or fallback
+                if (details.url.includes('youtube.com') || details.url.includes('youtube-nocookie.com')) {
+                    requestOrigin = 'https://www.youtube-nocookie.com';
+                } else {
+                    requestOrigin = '*';
+                }
             }
             
             responseHeaders['Access-Control-Allow-Origin'] = [requestOrigin];
             responseHeaders['Access-Control-Allow-Headers'] = ['*'];
             responseHeaders['Access-Control-Allow-Methods'] = ['*'];
-            responseHeaders['Access-Control-Allow-Credentials'] = ['true'];
+            // Only set credentials true if origin is not wildcard
+            if (requestOrigin !== '*') {
+                responseHeaders['Access-Control-Allow-Credentials'] = ['true'];
+            }
             
             callback({ responseHeaders });
         }
@@ -436,7 +455,25 @@ function createWindow() {
     });
     mainWindow.on('enter-full-screen', () => mainWindow.webContents.send('fullscreen-changed', true));
     mainWindow.on('leave-full-screen', () => mainWindow.webContents.send('fullscreen-changed', false));
-    mainWindow.loadURL(isDev ? 'http://localhost:3000' : `file://${path.join(__dirname, 'index.html')}`);
+    
+    if (isDev) {
+        mainWindow.loadURL('http://localhost:3000');
+    } else {
+        // Use custom protocol in production to bypass file:// restrictions
+        protocol.handle('app', (request) => {
+            const url = new URL(request.url);
+            let relativePath = url.pathname;
+            
+            // On Windows, the pathname might start with a leading slash or be the hostname
+            if (relativePath.startsWith('/')) relativePath = relativePath.slice(1);
+            if (!relativePath || relativePath === 'index.html') relativePath = 'index.html';
+            
+            const filePath = path.join(__dirname, relativePath);
+            return net.fetch(`file://${filePath}`);
+        });
+        mainWindow.loadURL('app://index.html');
+    }
+
     mainWindow.on('maximize', () => mainWindow.webContents.send('window-maximized', true));
     mainWindow.on('unmaximize', () => mainWindow.webContents.send('window-maximized', false));
 
@@ -460,7 +497,7 @@ ipcMain.on('show-native-notification', (event, { title, body, silent }) => {
             title,
             body,
             silent,
-            icon: path.join(__dirname, 'icon.png')
+            icon: path.join(__dirname, 'logo_256x256.png')
         });
         notification.show();
         notification.on('click', () => {
@@ -803,8 +840,12 @@ scanActivities();
 ipcMain.handle('get-current-activity', () => lastActivity ? { ...lastActivity, startTime: activityStartTime } : null);
 
 ipcMain.on('change-icon', (event, iconName) => {
-    // Эта функция отключена
-    const iconPath = path.join(__dirname, 'icon.ico');
+    let iconFile = 'logo_256x256.ico';
+    switch (iconName) {
+        case 'transparent': iconFile = 'logo-trans_256x256.png'; break;
+        default: iconFile = 'logo_256x256.ico'; break;
+    }
+    const iconPath = path.join(__dirname, iconFile);
     try {
         if (!fs.existsSync(iconPath)) return;
         const iconImage = nativeImage.createFromPath(iconPath);

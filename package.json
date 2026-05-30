@@ -17,13 +17,15 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.1.14"
   },
   "dependencies": {
     "@livekit/rtc-node": "^0.13.24",
     "@types/react-syntax-highlighter": "^15.5.13",
     "axios": "^1.13.4",
     "electron-updater": "^6.6.2",
+    "express": "^5.2.1",
     "react-syntax-highlighter": "^16.1.1",
     "socket.io-client": "^4.8.3",
     "yandex-music-client": "^0.4.3"

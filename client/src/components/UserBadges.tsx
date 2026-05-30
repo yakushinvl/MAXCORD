@@ -8,14 +8,14 @@ export interface Badge {
 }
 
 export const BADGES: Record<string, Badge> = {
-  dev: { id: 'dev', label: 'Разработчик', icon: '🛠️' },
-  premium: { id: 'premium', label: 'Премиум', icon: '💎' },
-  moderator: { id: 'moderator', label: 'Модератор', icon: '🛡️' },
-  artist: { id: 'artist', label: 'Художник', icon: '🎨' },
-  gamer: { id: 'gamer', label: 'Геймер', icon: '🎮' },
-  meow: { id: 'meow', label: 'Котик', icon: '🐈' },
-  staff: { id: 'staff', label: 'Персонал', icon: '👔' },
-  bug_hunter: { id: 'bug_hunter', label: 'Охотник за багами', icon: '🐛' }
+  dev: { id: 'dev', label: 'Разработчик', icon: './badges/developer.png' },
+  premium: { id: 'premium', label: 'Премиум', icon: './badges/premium.png' },
+  moderator: { id: 'moderator', label: 'Модератор', icon: './badges/moderate.png' },
+  artist: { id: 'artist', label: 'Художник', icon: './badges/painter.png' },
+  gamer: { id: 'gamer', label: 'Геймер', icon: './badges/gamer.png' },
+  meow: { id: 'meow', label: 'Котик', icon: './badges/cat.png' },
+  staff: { id: 'staff', label: 'Персонал', icon: './badges/personal%20stuff.png' },
+  bug_hunter: { id: 'bug_hunter', label: 'Охотник за багами', icon: './badges/Bug.png' }
 };
 
 interface UserBadgesProps {
@@ -33,14 +33,14 @@ const UserBadges: React.FC<UserBadgesProps> = ({ badges, size = 16, className = 
         const badge = BADGES[badgeId];
         if (!badge) return null;
         return (
-          <div 
+          <img 
             key={badgeId} 
+            src={badge.icon}
+            alt={badge.label}
             className="user-badge" 
             title={badge.label}
-            style={{ fontSize: `${size}px` }}
-          >
-            {badge.icon}
-          </div>
+            style={{ width: `${size}px`, height: `${size}px`, objectFit: 'contain' }}
+          />
         );
       })}
     </div>

@@ -95,8 +95,31 @@ const FriendsPanel: React.FC<FriendsPanelProps> = ({ friends, setFriends, onStar
     catch (e) { showMessage('Ошибка', 'error'); }
   };
 
+  const tabCounts = {
+    friends: friends.length,
+    pending: pendingRequests.length,
+  };
+
   return (
-    <div className="friends-panel">
+    <div className="friends-panel friends-panel--hero">
+      {/* Decorative background — drifting neon blobs + waves + central orb */}
+      <div className="friends-hero-bg" aria-hidden="true">
+        <div className="friends-hero-blob friends-hero-blob--cyan" />
+        <div className="friends-hero-blob friends-hero-blob--purple" />
+        <div className="friends-hero-blob friends-hero-blob--pink" />
+        <svg className="friends-hero-wave friends-hero-wave--cyan" viewBox="0 0 1200 400" preserveAspectRatio="none">
+          <path d="M0,200 C200,80 400,320 600,200 C800,80 1000,320 1200,200" />
+        </svg>
+        <svg className="friends-hero-wave friends-hero-wave--purple" viewBox="0 0 1200 400" preserveAspectRatio="none">
+          <path d="M0,220 C300,140 500,280 700,180 C900,100 1100,260 1200,220" />
+        </svg>
+        <div className="friends-hero-orb">
+          <div className="friends-hero-orb__ring" />
+          <div className="friends-hero-orb__core"><div className="friends-hero-orb__highlight" /></div>
+          <div className="friends-hero-orb__glow" />
+        </div>
+      </div>
+
       <div className="friends-main-container">
         <div className="friends-left-section">
           {isMobile && (
@@ -110,10 +133,33 @@ const FriendsPanel: React.FC<FriendsPanelProps> = ({ friends, setFriends, onStar
               <h3>Друзья</h3>
             </div>
           )}
+
+          <header className="friends-hero-header">
+            <span className="friends-hero-eyebrow">MAXCORD · Социальное</span>
+            <h1 className="friends-hero-title">
+              {activeTab === 'pending' ? <>Входящие <span className="friends-hero-title__accent">запросы</span></>
+                : activeTab === 'add' ? <>Найти <span className="friends-hero-title__accent">новых друзей</span></>
+                : <>Твоё <span className="friends-hero-title__accent">сообщество</span></>}
+            </h1>
+            <p className="friends-hero-sub">
+              {activeTab === 'pending' ? 'Принимай запросы или отклоняй — на твоё усмотрение.'
+                : activeTab === 'add' ? 'Ищи людей по имени и добавляй в друзья. Запрос придёт мгновенно.'
+                : 'Здесь все, с кем ты на связи. Кликни — открой профиль, или начни чат.'}
+            </p>
+          </header>
+
           <div className="friends-tabs">
-            <button className={activeTab === 'friends' ? 'active' : ''} onClick={() => setActiveTab('friends')}>Друзья</button>
-            <button className={activeTab === 'pending' ? 'active' : ''} onClick={() => setActiveTab('pending')}>Запросы</button>
-            <button className={activeTab === 'add' ? 'active' : ''} onClick={() => setActiveTab('add')}>Добавить</button>
+            <button className={activeTab === 'friends' ? 'active' : ''} onClick={() => setActiveTab('friends')}>
+              <span>Друзья</span>
+              <span className="friends-tab-count">{tabCounts.friends}</span>
+            </button>
+            <button className={activeTab === 'pending' ? 'active' : ''} onClick={() => setActiveTab('pending')}>
+              <span>Запросы</span>
+              {tabCounts.pending > 0 && <span className="friends-tab-count friends-tab-count--accent">{tabCounts.pending}</span>}
+            </button>
+            <button className={activeTab === 'add' ? 'active' : ''} onClick={() => setActiveTab('add')}>
+              <span>Добавить</span>
+            </button>
           </div>
           <div className="friends-content custom-scrollbar">
             {activeTab === 'friends' && (

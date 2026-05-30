@@ -1,7 +1,7 @@
 .dm-sidebar {
     width: 240px;
-    background: var(--glass-bg);
-    backdrop-filter: var(--glass-blur);
+    /* Background comes from .panel-hero gradient + animated blobs.
+       No backdrop-filter — would double-blur over custom user bg. */
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -91,25 +91,29 @@
     padding: 0 10px;
 }
 
+/* Glass card matches FriendsPanel / ServerSidebar — no neon rim */
 .dm-item {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 8px 12px;
-    border-radius: 12px;
+    padding: 9px 13px;
+    border-radius: 14px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    margin-bottom: 2px;
+    transition: background 0.25s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
+    margin-bottom: 4px;
     position: relative;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid transparent;
+    backdrop-filter: blur(20px);
 }
 
 .dm-item:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateY(-1px);
 }
 
 .dm-item.active {
-    background: rgba(255, 255, 255, 0.08);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, rgba(0, 242, 255, 0.12), rgba(112, 0, 255, 0.05));
 }
 
 .dm-avatar {

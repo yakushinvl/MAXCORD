@@ -24,16 +24,17 @@ const isAdmin = async (req, res, next) => {
   }
 };
 
-// Create a report
+// Create a report — target can be a user (incl. bot) or a mini-app.
 router.post('/report', auth, [
-  body('userId').isMongoId().withMessage('Invalid user ID'),
   body('reason').notEmpty().withMessage('Reason is required'),
 ], async (req, res) => {
   try {
-    const { userId, reason, description, messageId } = req.body;
+    const { userId, miniAppId, reason, description, messageId } = req.body;
+    if (!userId && !miniAppId) return res.status(400).json({ message: 'Нужно указать userId или miniAppId' });
     const report = new Report({
       reporter: req.user._id,
-      reportedUser: userId,
+      reportedUser: userId || null,
+      reportedMiniApp: miniAppId || null,
       reason,
       description,
       messageContext: messageId || null
@@ -54,6 +55,7 @@ router.get('/reports', [auth, isModerator], async (req, res) => {
     const reports = await Report.find(query)
       .populate('reporter', 'username avatar')
       .populate('reportedUser', 'username avatar')
+      .populate('reportedMiniApp', 'name avatar')
       .populate('resolvedBy', 'username')
       .populate('messageContext')
       .sort('-createdAt');
@@ -172,6 +174,171 @@ router.post('/reports/:id/unresolve', [auth, isModerator], async (req, res) => {
     }, { new: true });
     res.json(report);
   } catch (err) {
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// === Marketplace moderation: bots & mini-apps =============================
+const MiniApp = require('../models/MiniApp');
+
+// List all pending publication requests + currently approved (for blocking).
+router.get('/marketplace', auth, isModerator, async (req, res) => {
+  try {
+    const status = req.query.status || 'pending'; // pending | approved | rejected | blocked
+    const result = { bots: [], miniApps: [] };
+
+    if (status === 'pending') {
+      result.bots = await User.find({ isBot: true, botModerationStatus: 'pending' })
+        .select('username avatar banner bio owner botModerationStatus botModerationReason')
+        .populate('owner', 'username avatar');
+      result.miniApps = await MiniApp.find({ moderationStatus: 'pending', isSystem: { $ne: true } })
+        .populate('owner', 'username avatar');
+    } else if (status === 'approved') {
+      result.bots = await User.find({ isBot: true, isPublished: true, botIsBlocked: { $ne: true } })
+        .select('username avatar banner bio owner botModerationStatus')
+        .populate('owner', 'username avatar');
+      result.miniApps = await MiniApp.find({ isPublished: true, isBlocked: { $ne: true } })
+        .populate('owner', 'username avatar');
+    } else if (status === 'rejected') {
+      result.bots = await User.find({ isBot: true, botModerationStatus: 'rejected' })
+        .select('username avatar banner bio owner botModerationStatus botModerationReason')
+        .populate('owner', 'username avatar');
+      result.miniApps = await MiniApp.find({ moderationStatus: 'rejected' })
+        .populate('owner', 'username avatar');
+    } else if (status === 'blocked') {
+      result.bots = await User.find({ isBot: true, botIsBlocked: true })
+        .select('username avatar banner bio owner botBlockReason')
+        .populate('owner', 'username avatar');
+      result.miniApps = await MiniApp.find({ isBlocked: true })
+        .populate('owner', 'username avatar');
+    }
+    res.json(result);
+  } catch (e) {
+    console.error('marketplace list error:', e);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Approve a pending submission: publish it to showcase.
+router.post('/marketplace/:type/:id/approve', auth, isModerator, async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    if (type === 'bot') {
+      const bot = await User.findById(id);
+      if (!bot || !bot.isBot) return res.status(404).json({ message: 'Бот не найден' });
+      bot.botModerationStatus = 'approved';
+      bot.isPublished = true;
+      bot.botModerationReason = null;
+      bot.botModeratedAt = new Date();
+      bot.botModeratedBy = req.user._id;
+      await bot.save();
+    } else if (type === 'miniapp') {
+      const app = await MiniApp.findById(id);
+      if (!app) return res.status(404).json({ message: 'Приложение не найдено' });
+      app.moderationStatus = 'approved';
+      app.isPublished = true;
+      app.moderationReason = null;
+      app.moderatedAt = new Date();
+      app.moderatedBy = req.user._id;
+      await app.save();
+    } else {
+      return res.status(400).json({ message: 'Неверный тип' });
+    }
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Reject a pending submission with a reason.
+router.post('/marketplace/:type/:id/reject', auth, isModerator, async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    const reason = (req.body?.reason || '').trim() || 'Не указана';
+    if (type === 'bot') {
+      const bot = await User.findById(id);
+      if (!bot || !bot.isBot) return res.status(404).json({ message: 'Бот не найден' });
+      bot.botModerationStatus = 'rejected';
+      bot.isPublished = false;
+      bot.botModerationReason = reason;
+      bot.botModeratedAt = new Date();
+      bot.botModeratedBy = req.user._id;
+      await bot.save();
+    } else if (type === 'miniapp') {
+      const app = await MiniApp.findById(id);
+      if (!app) return res.status(404).json({ message: 'Приложение не найдено' });
+      app.moderationStatus = 'rejected';
+      app.isPublished = false;
+      app.moderationReason = reason;
+      app.moderatedAt = new Date();
+      app.moderatedBy = req.user._id;
+      await app.save();
+    } else {
+      return res.status(400).json({ message: 'Неверный тип' });
+    }
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Force-block an already-published item (yanks it from showcase).
+router.post('/marketplace/:type/:id/block', auth, isModerator, async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    const reason = (req.body?.reason || '').trim() || 'Без указания причины';
+    if (type === 'bot') {
+      const bot = await User.findById(id);
+      if (!bot || !bot.isBot) return res.status(404).json({ message: 'Бот не найден' });
+      bot.botIsBlocked = true;
+      bot.botBlockReason = reason;
+      bot.isPublished = false;
+      bot.botModerationStatus = 'rejected';
+      bot.botModeratedAt = new Date();
+      bot.botModeratedBy = req.user._id;
+      await bot.save();
+    } else if (type === 'miniapp') {
+      const app = await MiniApp.findById(id);
+      if (!app) return res.status(404).json({ message: 'Приложение не найдено' });
+      app.isBlocked = true;
+      app.blockReason = reason;
+      app.isPublished = false;
+      app.moderationStatus = 'rejected';
+      app.moderatedAt = new Date();
+      app.moderatedBy = req.user._id;
+      await app.save();
+    } else {
+      return res.status(400).json({ message: 'Неверный тип' });
+    }
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Unblock a previously-blocked item (returns to draft — author must resubmit).
+router.post('/marketplace/:type/:id/unblock', auth, isModerator, async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    if (type === 'bot') {
+      const bot = await User.findById(id);
+      if (!bot || !bot.isBot) return res.status(404).json({ message: 'Бот не найден' });
+      bot.botIsBlocked = false;
+      bot.botBlockReason = null;
+      bot.botModerationStatus = 'draft';
+      await bot.save();
+    } else if (type === 'miniapp') {
+      const app = await MiniApp.findById(id);
+      if (!app) return res.status(404).json({ message: 'Приложение не найдено' });
+      app.isBlocked = false;
+      app.blockReason = null;
+      app.moderationStatus = 'draft';
+      await app.save();
+    } else {
+      return res.status(400).json({ message: 'Неверный тип' });
+    }
+    res.json({ ok: true });
+  } catch (e) {
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });

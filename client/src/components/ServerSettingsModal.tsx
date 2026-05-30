@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import axios from 'axios';
+import AnimatedOverlay from '../animations/AnimatedOverlay';
 import { Server, User } from '../types';
 import { getAvatarUrl } from '../utils/avatar';
 import { CloseIcon, TrashIcon, PlusIcon, ChevronUpIcon, ChevronDownIcon, ChevronLeftIcon } from './Icons';
@@ -203,22 +203,6 @@ const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (file.type === 'image/gif') {
-            const formData = new FormData();
-            formData.append('icon', file);
-            try {
-                setLoading(true);
-                const res = await axios.post(`/api/servers/${server._id}/icon`, formData);
-                setServerIcon(res.data.icon);
-                onServerUpdate({ ...server, icon: res.data.icon });
-            } catch (err) {
-                await alert('Ошибка при загрузке иконки');
-            } finally {
-                setLoading(false);
-            }
-            return;
-        }
-
         const reader = new FileReader();
         reader.onload = () => setCropModal({ isOpen: true, image: reader.result as string, type: 'icon' });
         reader.readAsDataURL(file);
@@ -229,22 +213,6 @@ const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (file.type === 'image/gif') {
-            const formData = new FormData();
-            formData.append('banner', file);
-            try {
-                setLoading(true);
-                const res = await axios.post(`/api/servers/${server._id}/banner`, formData);
-                setServerBanner(res.data.banner);
-                onServerUpdate({ ...server, banner: res.data.banner });
-            } catch (err) {
-                await alert('Ошибка при загрузке баннера');
-            } finally {
-                setLoading(false);
-            }
-            return;
-        }
-
         const reader = new FileReader();
         reader.onload = () => setCropModal({ isOpen: true, image: reader.result as string, type: 'banner' });
         reader.readAsDataURL(file);
@@ -254,8 +222,9 @@ const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
     const handleCropComplete = async (croppedBlob: Blob) => {
         const type = cropModal.type;
         setCropModal(prev => ({ ...prev, isOpen: false }));
+        const ext = croppedBlob.type === 'image/gif' ? 'gif' : 'jpg';
         const formData = new FormData();
-        formData.append(type === 'icon' ? 'icon' : 'banner', croppedBlob, `${type}.jpg`);
+        formData.append(type === 'icon' ? 'icon' : 'banner', croppedBlob, `${type}.${ext}`);
 
         try {
             setLoading(true);
@@ -383,11 +352,15 @@ const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
         }
     };
 
-    if (!isOpen) return null;
-
-    const modalContent = (
-        <div className="server-settings-modal-overlay">
-            <div className="server-settings-modal">
+    return (
+        <AnimatedOverlay
+            isOpen={isOpen}
+            onClose={onClose}
+            overlayClassName="server-settings-modal-overlay"
+            contentClassName="server-settings-modal"
+            variant={isMobile ? 'sheet' : 'fade'}
+        >
+            <div style={{ display: 'contents' }}>
                 {(!isMobile || mobileViewState === 'tabs') && (
                     <div className="server-settings-sidebar">
                         <div className="sidebar-header">{server.name}</div>
@@ -441,14 +414,7 @@ const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
                                 <div className="overview-grid">
                                     <div className="avatar-upload-section">
                                         <div className="server-avatar-preview" onClick={() => fileInputRef.current?.click()}>
-                                            {getAvatarUrl(serverIcon) ? (
-                                                <img src={getAvatarUrl(serverIcon)!} alt="" />
-                                            ) : (
-                                                <div className="avatar-placeholder">{serverName ? serverName.charAt(0).toUpperCase() : '?'}</div>
-                                            )}
-                                            <div className="avatar-overlay">
-                                                <PlusIcon size={32} color="white" />
-                                            </div>
+                                            {getAvatarUrl(serverIcon) ? <img src={getAvatarUrl(serverIcon)!} alt="" /> : <span>{serverName ? serverName.charAt(0).toUpperCase() : '?'}</span>}
                                         </div>
                                         <div className="avatar-hint">СМЕНИТЬ ИКОНКУ</div>
                                         <input type="file" ref={fileInputRef} onChange={handleIconUpload} style={{ display: 'none' }} accept="image/*" />
@@ -456,7 +422,7 @@ const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
                                     <div className="input-section">
                                         <div className="settings-input-group">
                                             <label>Название сервера</label>
-                                            <input className="settings-input" value={serverName} onChange={(e) => setServerName(e.target.value)} />
+                                            <input className="settings-input" value={serverName} onChange={(e) => setServerName(e.target.value)} maxLength={32} />
                                         </div>
                                     </div>
                                 </div>
@@ -861,10 +827,8 @@ const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
                 )}
             </div>
             {cropModal.isOpen && <ImageCropper image={cropModal.image} onCropComplete={handleCropComplete} onCancel={() => setCropModal(prev => ({ ...prev, isOpen: false }))} aspect={cropModal.type === 'icon' ? 1 : 16 / 9} />}
-        </div>
+        </AnimatedOverlay>
     );
-
-    return createPortal(modalContent, document.body);
 };
 
 const formatAuditAction = (action: string) => {

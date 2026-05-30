@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { AnimatePresence } from 'framer-motion';
 import { useAuth } from './AuthContext';
 import { useNotifications } from './NotificationContext';
 import ReconnectingOverlay from '../components/ReconnectingOverlay';
@@ -17,10 +18,7 @@ export const useSocket = () => {
   return context;
 };
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? 'http://localhost:5000' 
-    : 'https://maxcord.fun');
+import { SOCKET_URL } from '../utils/config';
 const OVERLAY_DELAY = 60000; // 1 minute in ms
 
 export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -102,7 +100,9 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   return (
     <SocketContext.Provider value={{ socket, connected }}>
-      {showOverlay && <ReconnectingOverlay />}
+      <AnimatePresence>
+        {showOverlay && <ReconnectingOverlay key="reconnecting" />}
+      </AnimatePresence>
       {children}
     </SocketContext.Provider>
   );

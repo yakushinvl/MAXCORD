@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
+import { motion } from 'framer-motion';
+import { popoverVariants, popoverTransition } from '../animations/transitions';
 import { User, Server } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
@@ -280,16 +282,23 @@ const MemberContextMenu: React.FC<MemberContextMenuProps> = ({
         );
     }
 
+    const originX = `${Math.max(0, x - adjustedPos.left)}px`;
+    const originY = `${Math.max(0, y - adjustedPos.top)}px`;
+
     return ReactDOM.createPortal(
-        <div
+        <motion.div
             className="member-context-menu"
             ref={menuRef}
             style={{
                 top: adjustedPos.top,
                 left: adjustedPos.left,
                 visibility: isVisible ? 'visible' : 'hidden',
-                opacity: isVisible ? 1 : 0
+                transformOrigin: `${originX} ${originY}`,
             }}
+            variants={popoverVariants}
+            initial="initial"
+            animate={isVisible ? 'animate' : 'initial'}
+            transition={popoverTransition}
         >
             <div className="menu-group">
                 <div className="menu-item" onClick={() => handleAction('profile')}>Профиль</div>
@@ -426,7 +435,7 @@ const MemberContextMenu: React.FC<MemberContextMenuProps> = ({
                     </div>
                 </>
             )}
-        </div>,
+        </motion.div>,
         document.body
     );
 };

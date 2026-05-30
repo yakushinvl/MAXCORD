@@ -69,38 +69,33 @@ router.post('/webhook', async (req, res) => {
         if (event.event === 'participant_left') {
             const userId = event.participant.identity;
             const roomName = event.room.name; // e.g., "channel-ID"
-            
+
             if (roomName.startsWith('channel-')) {
                 const channelId = roomName.replace('channel-', '');
                 const io = req.app.get('io');
-                
+                const voiceManager = req.app.get('voiceManager');
+
                 if (io) {
-                    // Find any stuck sockets for this user and make them leave the room
-                    const userRoom = io.sockets.adapter.rooms.get(`user-${userId}`);
-                    if (userRoom) {
-                        for (const socketId of userRoom) {
+                    // Force-evict every socket belonging to this user from the voice-channel room.
+                    // We walk the voice-channel room itself (not the user room) so phantoms whose
+                    // user-{id} room has already been cleaned still get removed.
+                    const voiceRoom = io.sockets.adapter.rooms.get(`voice-channel-${channelId}`);
+                    if (voiceRoom) {
+                        for (const socketId of Array.from(voiceRoom)) {
                             const socket = io.sockets.sockets.get(socketId);
-                            if (socket && socket.voiceChannelId === channelId) {
-                                console.log(`[LiveKit Webhook] Cleaning up stuck socket ${socketId} for user ${userId}`);
+                            if (socket && String(socket.userId) === String(userId)) {
+                                console.log(`[LiveKit Webhook] Evicting socket ${socketId} for user ${userId}`);
                                 socket.leave(`voice-channel-${channelId}`);
                                 socket.voiceChannelId = null;
+                            } else if (!socket) {
+                                voiceRoom.delete(socketId);
                             }
                         }
                     }
 
-                    // Notify everyone that the user left
                     io.to(`voice-channel-${channelId}`).emit('voice-user-left', { userId });
-                    
-                    // Trigger update for server-wide voice states
-                    const Channel = require('../models/Channel');
-                    const channel = await Channel.findById(channelId);
-                    if (channel) {
-                        const users = []; // In a real scenario, we'd call getVoiceChannelUsers but it's in server.js
-                        // For simplicity, we can emit a general update event that clients can use to refresh
-                        // Actually, we'll try to reach notifyVoiceChannelUpdate logic
-                        const serverId = channel.server;
-                        // Since notifyVoiceChannelUpdate is not exported from server.js, we'll duplicate the logic or export it
-                        // For now, let's just emit the leave event which most clients handle
+                    if (voiceManager) {
+                        await voiceManager.notifyVoiceChannelUpdate(channelId);
                     }
                 }
             }

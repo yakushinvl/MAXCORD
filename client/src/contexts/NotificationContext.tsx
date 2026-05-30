@@ -9,6 +9,8 @@ export interface Notification {
     type: 'info' | 'success' | 'warning' | 'error' | 'message';
     avatar?: string;
     onClick?: () => void;
+    /** Duration in ms before auto-dismiss. `0` keeps it until the user closes it. Default 5000. */
+    duration?: number;
 }
 
 interface NotificationContextType {
@@ -39,10 +41,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
         setNotifications(prev => [...prev, newNotification]);
 
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-            removeNotification(id);
-        }, 5000);
+        const ttl = notification.duration ?? 5000;
+        if (ttl > 0) {
+            setTimeout(() => {
+                removeNotification(id);
+            }, ttl);
+        }
     }, [removeNotification]);
 
     const value = useMemo(() => ({ addNotification, removeNotification }), [addNotification, removeNotification]);

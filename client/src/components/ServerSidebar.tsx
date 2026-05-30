@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Server, Channel, User } from '../types';
 import { getAvatarUrl } from '../utils/avatar';
 import { useSocket } from '../contexts/SocketContext';
@@ -8,6 +8,7 @@ import { HashtagIcon, SpeakerIcon, PlusIcon, SettingsIcon, MicMutedIcon, Deafene
 import { useAuth } from '../contexts/AuthContext';
 import { useVoice, useVoiceLevels } from '../contexts/VoiceContext';
 import { Permissions, hasPermission, computePermissions } from '../utils/permissions';
+import './panel-hero.css';
 import './ServerSidebar.css';
 import InviteModal from './InviteModal';
 import MemberContextMenu from './MemberContextMenu';
@@ -54,12 +55,69 @@ const ServerSidebar: React.FC<ServerSidebarProps> = ({
   const [editingChannel, setEditingChannel] = useState<Channel | null>(null);
   const [voiceStates, setVoiceStates] = useState<Record<string, User[]>>({});
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, user: User } | null>(null);
+  // Drag-to-move state. We keep the source in a REF (not state) because the
+  // browser fires `dragover` before React commits the `setDragging` from
+  // `dragstart` — without a ref the dragover handler reads `null` and never
+  // calls preventDefault, so the browser refuses the drop entirely.
+  // `draggingId` state is only for visual feedback (opacity of source).
+  const draggingRef = useRef<{ userId: string; fromChannelId: string } | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
 
   // Use computePermissions - it already handles ownership by returning all bits
   const userPerms = currentUser ? computePermissions(currentUser._id, server) : 0n;
   const canManageGuild = hasPermission(userPerms, Permissions.MANAGE_GUILD);
   const canCreateChannels = hasPermission(userPerms, Permissions.MANAGE_CHANNELS);
   const canInvite = hasPermission(userPerms, Permissions.CREATE_INSTANT_INVITE);
+  const canMoveMembers = hasPermission(userPerms, Permissions.MOVE_MEMBERS);
+
+  // === Drag handlers (admin-only voice member move) ===
+  const handleUserDragStart = (e: React.DragEvent, userId: string, fromChannelId: string) => {
+    if (!canMoveMembers) return;
+    e.stopPropagation();
+    e.dataTransfer.effectAllowed = 'move';
+    // Provide BOTH text/plain (some browsers strip non-standard MIME on Windows)
+    // and a custom MIME we can identify in drop.
+    const payload = JSON.stringify({ userId, fromChannelId });
+    try { e.dataTransfer.setData('application/maxcord-voice-user', payload); } catch {}
+    try { e.dataTransfer.setData('text/plain', payload); } catch {}
+    draggingRef.current = { userId, fromChannelId };
+    setDraggingId(userId);
+  };
+  const handleUserDragEnd = () => {
+    draggingRef.current = null;
+    setDraggingId(null);
+    setDropTargetId(null);
+  };
+  const handleChannelDragOver = (e: React.DragEvent, channelId: string) => {
+    const src = draggingRef.current;
+    if (!canMoveMembers || !src) return;
+    if (src.fromChannelId === channelId) return; // no-op drop on source
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dropTargetId !== channelId) setDropTargetId(channelId);
+  };
+  const handleChannelDragLeave = (e: React.DragEvent, channelId: string) => {
+    if (e.currentTarget === e.target && dropTargetId === channelId) setDropTargetId(null);
+  };
+  const handleChannelDrop = (e: React.DragEvent, channelId: string) => {
+    if (!canMoveMembers) return;
+    e.preventDefault();
+    e.stopPropagation();
+    // Prefer the custom MIME, fall back to text/plain.
+    const raw =
+      e.dataTransfer.getData('application/maxcord-voice-user')
+      || e.dataTransfer.getData('text/plain');
+    draggingRef.current = null;
+    setDraggingId(null);
+    setDropTargetId(null);
+    if (!raw || !socket) return;
+    try {
+      const { userId, fromChannelId } = JSON.parse(raw) as { userId: string; fromChannelId: string };
+      if (!userId || fromChannelId === channelId) return;
+      socket.emit('admin-voice-move', { userId, channelId });
+    } catch { /* ignore malformed drag data */ }
+  };
 
   /* console.log('ServerSidebar Permissions Debug:', { serverName: server.name, userId: currentUser?._id, isOwner, userPerms: userPerms.toString() }); */
 
@@ -68,8 +126,8 @@ const ServerSidebar: React.FC<ServerSidebarProps> = ({
     setContextMenu({ x: e.clientX, y: e.clientY, user });
   };
 
-  const textChannels = server.channels.filter(ch => ch.type === 'text');
-  const voiceChannels = server.channels.filter(ch => ch.type === 'voice');
+  const textChannels = (server.channels || []).filter(c => c.type === 'text');
+  const voiceChannels = (server.channels || []).filter(c => c.type === 'voice');
 
   useEffect(() => {
     if (socket) {
@@ -92,7 +150,12 @@ const ServerSidebar: React.FC<ServerSidebarProps> = ({
   };
 
   return (
-    <div className="server-sidebar" style={style}>
+    <div className="server-sidebar panel-hero" style={style}>
+      <div className="panel-hero-bg" aria-hidden="true">
+        <div className="blob cyan" />
+        <div className="blob purple" />
+        <div className="blob pink" />
+      </div>
       <div className="server-header">
         <div className="server-header-left" onClick={onServerClick} style={{ cursor: 'pointer' }}>
           {server.icon ? (
@@ -153,16 +216,20 @@ const ServerSidebar: React.FC<ServerSidebarProps> = ({
 
               const canEditThisChannel = hasPermission(channelPerms, Permissions.MANAGE_CHANNELS);
 
+              const isDropTarget = canMoveMembers && dropTargetId === channel._id;
               return (
                 <div key={channel._id}>
                   <div
-                    className={`channel-item ${selectedChannel?._id === channel._id ? 'active' : ''}`}
+                    className={`channel-item ${selectedChannel?._id === channel._id ? 'active' : ''} ${isDropTarget ? 'is-drop-target' : ''}`}
                     onClick={() => {
                       onChannelSelect(channel);
                       if (activeChannelId !== channel._id) {
                         joinChannel(channel._id);
                       }
                     }}
+                    onDragOver={(e) => handleChannelDragOver(e, channel._id)}
+                    onDragLeave={(e) => handleChannelDragLeave(e, channel._id)}
+                    onDrop={(e) => handleChannelDrop(e, channel._id)}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
                       <span className="channel-icon">
@@ -191,9 +258,20 @@ const ServerSidebar: React.FC<ServerSidebarProps> = ({
                   {voiceStates[channel._id] && voiceStates[channel._id].length > 0 && (
                     <div className="voice-channel-users">
                       {voiceStates[channel._id].map(u => (
-                        <div key={u._id} className={`voice-user-item ${speakingUsers.has(u._id) ? 'speaking' : ''}`} onClick={(e) => { e.stopPropagation(); onUserClick(u._id, e); }} onContextMenu={(e) => handleContextMenu(e, u)}>
+                        <div
+                          key={u._id}
+                          className={`voice-user-item ${speakingUsers.has(u._id) ? 'speaking' : ''} ${draggingId === u._id ? 'is-dragging' : ''} ${canMoveMembers ? 'is-draggable' : ''}`}
+                          draggable={canMoveMembers}
+                          onDragStart={(e) => handleUserDragStart(e, u._id, channel._id)}
+                          onDragEnd={handleUserDragEnd}
+                          onClick={(e) => { e.stopPropagation(); onUserClick(u._id, e); }}
+                          onContextMenu={(e) => handleContextMenu(e, u)}
+                          title={canMoveMembers ? 'Перетащите для перемещения в другой канал' : undefined}
+                        >
                           <div className={`voice-user-avatar ${speakingUsers.has(u._id) ? 'speaking' : ''}`}>
-                            {getAvatarUrl(u.avatar) ? <img src={getAvatarUrl(u.avatar)!} alt="" /> : <span>{u.username.charAt(0).toUpperCase()}</span>}
+                            {/* draggable={false} on the <img> — otherwise the browser's default
+                                image-drag intercepts the parent's drag and our dragstart never fires. */}
+                            {getAvatarUrl(u.avatar) ? <img src={getAvatarUrl(u.avatar)!} alt="" draggable={false} /> : <span>{u.username.charAt(0).toUpperCase()}</span>}
                           </div>
                           <div className="voice-user-name-row">
                             <span className={`voice-user-name ${speakingUsers.has(u._id) ? 'speaking' : ''}`}>
