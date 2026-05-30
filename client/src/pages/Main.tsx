@@ -820,7 +820,6 @@ const Main: React.FC = () => {
       {/* --- CONTENT AREA --- */}
       {((!isMobile || mobileView === 'content')) && (
         <div className="main-content-area">
-          <VerificationWarning onOpenSettings={() => setShowSettingsModal(true)} />
           {(() => {
             // Mutually-exclusive content swap. Outer key drives section change;
             // inner AnimatePresence inside Channel/DM blocks animates id swap separately.
