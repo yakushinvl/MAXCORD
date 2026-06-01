@@ -130,6 +130,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     messageSpacing, setMessageSpacing,
     groupSpacing, setGroupSpacing,
     fontScale, setFontScale,
+    uiScale, setUiScale,
     appIcon, setAppIcon,
     performanceMode, setPerformanceMode,
     customColors, setCustomColors,
@@ -641,6 +642,22 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                   step="0.05"
                   value={fontScale}
                   onChange={(e) => setFontScale(parseFloat(e.target.value))}
+                  className="settings-slider"
+                />
+              </div>
+
+              <div className="settings-form-group">
+                <div className="slider-header-row">
+                  <label>Масштаб интерфейса</label>
+                  <span className="slider-value">{Math.round(uiScale * 100)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="2.0"
+                  step="0.05"
+                  value={uiScale}
+                  onChange={(e) => setUiScale(parseFloat(e.target.value))}
                   className="settings-slider"
                 />
               </div>

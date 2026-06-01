@@ -25,23 +25,14 @@ const ReconnectingOverlay: React.FC = () => {
                 initial="initial" animate="animate"
                 transition={modalPopTransition}
             >
-                <svg viewBox="0 0 100 100" className="z-logo-svg">
-                    {/* Z Top Left */}
-                    <rect className="z-part z-top-left" x="20" y="20" width="30" height="12" rx="4" fill="var(--primary-neon)" />
-                    {/* Z Top Right */}
-                    <rect className="z-part z-top-right" x="50" y="20" width="30" height="12" rx="4" fill="var(--primary-neon)" />
-                    
-                    {/* Z Diagonal (Main) */}
-                    <path className="z-part z-mid" d="M75 32 L30 80 L20 80 L20 68 L65 20 Z" fill="var(--primary-neon)" />
-                    
-                    {/* Z Bottom Left */}
-                    <rect className="z-part z-bot-left" x="20" y="68" width="30" height="12" rx="4" fill="var(--primary-neon)" />
-                    {/* Z Bottom Right */}
-                    <rect className="z-part z-bot-right" x="50" y="68" width="30" height="12" rx="4" fill="var(--primary-neon)" />
-                </svg>
+                <div className="liquid-loader">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </div>
             </motion.div>
 
-            <div className="reconnecting-text">ПОДКЛЮЧЕНИЕ</div>
+            <div className="loading-text-glow" style={{ marginTop: '20px' }}>ВОССТАНОВЛЕНИЕ СВЯЗИ</div>
 
             <div className="reconnecting-dots">
                 <span></span><span></span><span></span>

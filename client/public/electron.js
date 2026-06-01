@@ -100,10 +100,6 @@ app.commandLine.appendSwitch('enable-features', 'VaapiVideoDecoder,VaapiVideoEnc
 // Force WebRTC to use higher bitrate and disable internal bandwidth limits
 app.commandLine.appendSwitch('force-fieldtrials', 'WebRTC-Video-MinimumSendBitrate/Enabled-300000/');
 
-if (!isDev) {
-    app.commandLine.appendSwitch('force-device-scale-factor', '1'); // Consistent sizing
-}
-
 // Disable the yellow/green border on Windows 10/11 when capturing windows
 // Also disable Vulkan which can cause green screen/flickering on some GPUs
 // Added IsolateOrigins and site-per-process to disable-features to fix cross-origin track transfer
@@ -137,6 +133,12 @@ function saveWindowState() {
 autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = true;
 autoUpdater.setFeedURL({ provider: 'github', owner: 'pkda1lu', repo: 'maxcord' });
+
+ipcMain.on('set-zoom-factor', (event, factor) => {
+    if (mainWindow && !mainWindow.webContents.isDestroyed()) {
+        mainWindow.webContents.setZoomFactor(factor);
+    }
+});
 
 if (process.defaultApp) {
     if (process.argv.length >= 2) app.setAsDefaultProtocolClient('maxcord', process.execPath, [path.resolve(process.argv[1])]);

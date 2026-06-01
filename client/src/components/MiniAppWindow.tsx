@@ -551,7 +551,9 @@ const MiniAppWindow: React.FC<MiniAppWindowProps> = ({ app, onClose, onMinimize,
                 )}
                 {isLoading && !isBlocked && (
                     <div className="miniapp-loading">
-                        <div className="loading-spinner-rings"><div></div><div></div><div></div><div></div></div>
+                        <div className="liquid-loader">
+                            <div></div><div></div><div></div>
+                        </div>
                     </div>
                 )}
                 <iframe

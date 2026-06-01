@@ -16,6 +16,7 @@ interface AppearanceSettings {
     messageSpacing: number; // 0 to 24px
     groupSpacing: number; // 0 to 48px
     fontScale: number; // 0.8 to 1.5
+    uiScale: number; // 0.5 to 2.0
     appIcon: AppIconType;
     performanceMode: boolean;
     customColors: CustomColors;
@@ -30,6 +31,7 @@ interface AppearanceContextType extends AppearanceSettings {
     setMessageSpacing: (spacing: number) => void;
     setGroupSpacing: (spacing: number) => void;
     setFontScale: (scale: number) => void;
+    setUiScale: (scale: number) => void;
     setAppIcon: (icon: AppIconType) => void;
     setPerformanceMode: (enabled: boolean) => void;
     setCustomColors: (colors: Partial<CustomColors>) => void;
@@ -61,6 +63,7 @@ export const AppearanceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
                 messageSpacing: parsed.messageSpacing ?? 2,
                 groupSpacing: parsed.groupSpacing ?? 16,
                 fontScale: parsed.fontScale ?? 1.0,
+                uiScale: parsed.uiScale ?? 1.0,
                 appIcon: parsed.appIcon || 'default',
                 performanceMode: parsed.performanceMode ?? false,
                 customColors: parsed.customColors || { ...DEFAULT_CUSTOM_COLORS },
@@ -75,6 +78,7 @@ export const AppearanceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             messageSpacing: 2,
             groupSpacing: 16,
             fontScale: 1.0,
+            uiScale: 1.0,
             appIcon: 'default',
             performanceMode: false,
             customColors: { ...DEFAULT_CUSTOM_COLORS },
@@ -92,6 +96,7 @@ export const AppearanceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         const electron = (window as any).electron;
         if (electron && electron.ipc) {
             electron.ipc.send('change-icon', settings.appIcon);
+            electron.ipc.send('set-zoom-factor', settings.uiScale);
         }
 
         // Apply icon to Browser Favicon
@@ -188,6 +193,11 @@ export const AppearanceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         root.style.setProperty('--font-scale', s.fontScale.toString());
         root.style.setProperty('--base-font-size', `${16 * s.fontScale}px`);
 
+        // Apply UI scale via CSS zoom for browser fallback if Electron fails
+        if (!(window as any).electron) {
+            (root.style as any).zoom = s.uiScale.toString();
+        }
+
         // Density modifiers
         if (s.density === 'compact') {
             root.style.setProperty('--message-padding-v', '2px');
@@ -215,6 +225,7 @@ export const AppearanceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const setMessageSpacing = (messageSpacing: number) => setSettings(prev => ({ ...prev, messageSpacing }));
     const setGroupSpacing = (groupSpacing: number) => setSettings(prev => ({ ...prev, groupSpacing }));
     const setFontScale = (fontScale: number) => setSettings(prev => ({ ...prev, fontScale }));
+    const setUiScale = (uiScale: number) => setSettings(prev => ({ ...prev, uiScale }));
     const setAppIcon = (appIcon: AppIconType) => setSettings(prev => ({ ...prev, appIcon }));
     const setPerformanceMode = (performanceMode: boolean) => setSettings(prev => ({ ...prev, performanceMode }));
     
@@ -243,6 +254,7 @@ export const AppearanceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             setMessageSpacing,
             setGroupSpacing,
             setFontScale,
+            setUiScale,
             setAppIcon,
             setPerformanceMode,
             setCustomColors,

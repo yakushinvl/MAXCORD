@@ -14,10 +14,10 @@ const Home: React.FC = () => {
     if (loading) {
         return (
             <div className="invite-page-loading">
-                <div className="loading-spinner-rings">
-                    <div></div><div></div><div></div><div></div>
+                <div className="liquid-loader">
+                    <div></div><div></div><div></div>
                 </div>
-                <span>Инициализация...</span>
+                <span className="loading-text-glow" style={{ marginTop: '24px' }}>Инициализация...</span>
             </div>
         );
     }

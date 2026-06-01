@@ -64,11 +64,11 @@ const InvitePage: React.FC = () => {
     if (loading || authLoading) {
         return (
             <div className="preview-container">
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '20px', zIndex: 10 }}>
-                    <div className="loading-spinner-rings" style={{ borderColor: 'var(--primary-neon) transparent' }}>
-                        <div></div><div></div><div></div><div></div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '24px', zIndex: 10 }}>
+                    <div className="liquid-loader">
+                        <div></div><div></div><div></div>
                     </div>
-                    <span style={{ color: 'white', fontWeight: 600, letterSpacing: '1px' }}>ПОДГОТОВКА ПРИГЛАШЕНИЯ...</span>
+                    <span className="loading-text-glow">ПОДГОТОВКА ПРИГЛАШЕНИЯ...</span>
                 </div>
             </div>
         );

@@ -1,7 +1,62 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
+/* --- LIQUID LOADER 2026 --- */
+.liquid-loader {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.liquid-loader div {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 4px solid transparent;
+  border-top-color: var(--primary-neon);
+  animation: liquid-rotate 2s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+}
+
+.liquid-loader div:nth-child(2) {
+  width: 80%;
+  height: 80%;
+  border-top-color: var(--secondary-neon);
+  animation-duration: 1.5s;
+  animation-direction: reverse;
+}
+
+.liquid-loader div:nth-child(3) {
+  width: 60%;
+  height: 60%;
+  border-top-color: var(--accent-pink);
+  animation-duration: 1s;
+}
+
+@keyframes liquid-rotate {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+.loading-text-glow {
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  color: white;
+  text-shadow: 0 0 10px var(--primary-neon);
+  animation: text-pulse 2s ease-in-out infinite;
+}
+
+@keyframes text-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
 :root {
-  /* --- LIQUID GLASS 2026 DESIGN TOKENS --- */
   --bg-dark: #020205;
   --glass-bg: rgba(255, 255, 255, 0.035);
   --glass-bg-strong: rgba(255, 255, 255, 0.06);
