@@ -26,7 +26,7 @@ let currentVoiceState = { isMuted: false, isDeafened: false, isConnected: false 
 const isOpenedHidden = process.argv.includes('--hidden') || app.getLoginItemSettings().wasOpenedAsHidden;
 
 let appSettings = {
-    minimizeToTray: true,
+    minimizeToTray: false,
     closeToTray: true,
     startMinimized: false
 };
@@ -132,7 +132,7 @@ function saveWindowState() {
 
 autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = true;
-autoUpdater.setFeedURL({ provider: 'github', owner: 'pkda1lu', repo: 'maxcord' });
+autoUpdater.setFeedURL({ provider: 'github', owner: 'yakushinvl', repo: 'maxcord' });
 
 ipcMain.on('set-zoom-factor', (event, factor) => {
     if (mainWindow && !mainWindow.webContents.isDestroyed()) {
@@ -261,9 +261,10 @@ function createUpdaterWindow() {
         updaterWindow.webContents.send('updater-message', 'У вас последняя версия');
         setTimeout(() => { createWindow(); if (updaterWindow && !updaterWindow.isDestroyed()) updaterWindow.close(); }, 1000);
     });
-    autoUpdater.on('error', () => {
-        updaterWindow.webContents.send('updater-message', 'Ошибка при поиске обновлений');
-        setTimeout(() => { createWindow(); if (updaterWindow && !updaterWindow.isDestroyed()) updaterWindow.close(); }, 2000);
+    autoUpdater.on('error', (err) => {
+        log.error('Updater error:', err);
+        updaterWindow.webContents.send('updater-message', `Ошибка: ${err.message || 'Неизвестная ошибка'}`);
+        setTimeout(() => { createWindow(); if (updaterWindow && !updaterWindow.isDestroyed()) updaterWindow.close(); }, 4000);
     });
     autoUpdater.on('download-progress', (progressObj) => updaterWindow.webContents.send('updater-progress', progressObj.percent));
     autoUpdater.on('update-downloaded', () => {

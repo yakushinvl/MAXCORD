@@ -346,7 +346,7 @@
     <main>
         <div id="card" class="card" data-state="checking">
             <div class="logo-wrap">
-                <img src="icon.png" alt="MAXCORD">
+                <img src="logo-trans_256x256.png" alt="MAXCORD">
             </div>
             <div id="badge" class="badge">
                 <span class="dot"></span>
@@ -455,6 +455,12 @@
             progressPct.textContent = Math.round(percent) + '%';
             const eta = formatEta(percent);
             if (eta) progressEta.textContent = eta;
+            statusEl.innerHTML = 'Загружаем обновление<span class="dots"></span>';
+        });
+    </script>
+</body>
+</html>
+rogressEta.textContent = eta;
             statusEl.innerHTML = 'Загружаем обновление<span class="dots"></span>';
         });
     </script>
